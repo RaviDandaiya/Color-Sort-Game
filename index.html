@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Pour - Viral Puzzle Game</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <div class="level-info">
+                <h1>Level <span id="levelDisplay">1</span></h1>
+                <p>Welcome, <span id="playerName" class="player-name">Player</span>! Sort the colors into matching
+                    tubes.</p>
+            </div>
+
+            <div class="monetization-hooks">
+                <button class="btn btn-secondary icon-btn" id="audioToggle" onclick="game.toggleAudio()"
+                    title="Toggle Audio">🔊</button>
+                <button class="btn btn-secondary" onclick="game.undoMove()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7v6h6" />
+                        <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13" />
+                    </svg>
+                    Undo
+                </button>
+                <button class="btn btn-premium" onclick="game.showHint()">
+                    Hint <span class="badge">Ad</span>
+                </button>
+                <button class="btn btn-premium" onclick="game.addExtraTube()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5v14" />
+                        <path d="M5 12h14" />
+                    </svg>
+                    Add Tube <span class="badge">Ad</span>
+                </button>
+            </div>
+        </header>
+
+        <main id="gameBoard" class="game-board">
+            <!-- Tubes will be generated here by JS -->
+        </main>
+
+        <div id="tutorialTip" class="tutorial-tip">
+            <span class="pulse-dot"></span>
+            <p><strong>How to play:</strong> Tap a tube to select the top liquid, then tap another tube to pour it. Sort
+                all matching colors together!</p>
+        </div>
+
+        <div id="winModal" class="modal hidden">
+            <div class="modal-content glass">
+                <h2>Level Complete!</h2>
+                <p>Amazing sorting skills 🤩</p>
+                <div class="stars">⭐⭐⭐</div>
+                <button class="btn btn-primary btn-large" onclick="game.nextLevel()">Next Level</button>
+            </div>
+        </div>
+
+        <footer class="legal-links">
+            <a href="terms.html">Terms & Conditions</a>
+            <a href="privacy.html">Privacy Policy</a>
+        </footer>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+
+</html>
