@@ -4,23 +4,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Color Pour - Viral Puzzle Game</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <title>Mystic Alchemy - Potion Sort</title>
+    <link rel="stylesheet" href="src/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Outfit:wght@400;600&display=swap" rel="stylesheet">
 </head>
 
 <body>
     <div class="app-container">
         <header>
             <div class="level-info">
-                <h1>Level <span id="levelDisplay">1</span></h1>
-                <p>Welcome, <span id="playerName" class="player-name">Player</span>! Sort the colors into matching
-                    tubes.</p>
+                <h1>Spell Level <span id="levelDisplay">1</span></h1>
+                <p><span id="playerTitle" class="player-title">Apprentice</span> <span id="playerName" class="player-name">Alchemist</span></p>
+                <div class="essence-counter">
+                    <span class="essence-icon">💎</span> <span id="essenceDisplay">0</span> Essence
+                </div>
+            </div>
+            
+            <div id="themeBanner" class="theme-banner">
+                <!-- Theme name will appear here and fade out -->
             </div>
 
             <div class="monetization-hooks">
-                <button class="btn btn-secondary icon-btn" id="audioToggle" onclick="game.toggleAudio()"
-                    title="Toggle Audio">🔊</button>
+                <button class="btn btn-secondary icon-btn" onclick="game.toggleSettings()" title="Settings">⚙️</button>
+                <button class="btn btn-secondary" onclick="game.nextLevel()" title="Skip Level (Testing)">
+                    Skip Level ⏭️
+                </button>
                 <button class="btn btn-secondary" onclick="game.undoMove()">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -38,7 +46,13 @@
                         <path d="M12 5v14" />
                         <path d="M5 12h14" />
                     </svg>
-                    Add Tube <span class="badge">Ad</span>
+                    Add Vial <span class="badge">Ad</span>
+                </button>
+                <button class="btn btn-shop" id="shopBtn" onclick="game.toggleShop()">
+                    🛍️ Shop
+                </button>
+                <button class="btn btn-daily" id="dailyBtn" onclick="game.startDailyChallenge()">
+                    📅 Daily Spell
                 </button>
             </div>
         </header>
@@ -49,26 +63,77 @@
 
         <div id="tutorialTip" class="tutorial-tip">
             <span class="pulse-dot"></span>
-            <p><strong>How to play:</strong> Tap a tube to select the top liquid, then tap another tube to pour it. Sort
-                all matching colors together!</p>
+            <p><strong>Arcane Arts:</strong> Tap a vial to draw the top elixir, then tap another to pour it. Sort all matching potions together!</p>
         </div>
 
         <div id="winModal" class="modal hidden">
             <div class="modal-content glass">
-                <h2>Level Complete!</h2>
-                <p>Amazing sorting skills 🤩</p>
-                <div class="stars">⭐⭐⭐</div>
+                <h2>Transmutation Complete!</h2>
+                <p>Masterful potion sorting 🔮</p>
+                <div class="reward-display">
+                    +<span id="essenceReward">50</span> 💎 Essence
+                </div>
+                <div class="stars">✨✨✨</div>
                 <button class="btn btn-primary btn-large" onclick="game.nextLevel()">Next Level</button>
             </div>
         </div>
 
-        <footer class="legal-links">
-            <a href="terms.html">Terms & Conditions</a>
-            <a href="privacy.html">Privacy Policy</a>
-        </footer>
+        <div id="shopModal" class="modal hidden">
+            <div class="modal-content glass shop-content">
+                <div class="shop-header">
+                    <h2>Arcane Emporium</h2>
+                    <button class="close-btn" onclick="game.toggleShop()">✕</button>
+                </div>
+                <div class="shop-tabs">
+                    <button class="tab-btn active" onclick="game.switchShopTab('skins')">Skins</button>
+                    <button class="tab-btn" onclick="game.switchShopTab('lab')">Laboratory</button>
+                </div>
+                <div id="shopItems" class="shop-items">
+                    <!-- Items will be generated here -->
+                </div>
+            </div>
+        </div>
+
+        <div id="settingsModal" class="modal hidden">
+            <div class="modal-content glass settings-content">
+                <div class="shop-header">
+                    <h2>Settings</h2>
+                    <button class="close-btn" onclick="game.toggleSettings()">✕</button>
+                </div>
+                <div class="settings-list">
+                    <div class="settings-item">
+                        <div class="settings-label">
+                            <h3>Magic Audio</h3>
+                            <p>Spell sounds and ambiance</p>
+                        </div>
+                        <button class="btn" id="audioToggleSettings" onclick="game.toggleAudio()">🔊 Sound On</button>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-label">
+                            <h3>Haptic Touch</h3>
+                            <p>Tactile magical feedback</p>
+                        </div>
+                        <button class="btn" id="vibrationToggleSettings" onclick="game.toggleVibration()">📳 Haptics On</button>
+                    </div>
+                    
+                    <div class="settings-divider"></div>
+                    
+                    <div class="settings-legal">
+                        <a href="terms.html" class="legal-link">📜 Terms & Conditions</a>
+                        <a href="privacy.html" class="legal-link">🛡️ Privacy Policy</a>
+                        <a href="mailto:support@mysticalchemy.com" class="legal-link">📧 Contact Alchemist</a>
+                    </div>
+
+                    <div class="settings-footer">
+                        <img src="/assets/images/company-logo.png" alt="Skyforge Logo" class="company-logo">
+                        <span class="developer-text">Developed by Skyforge</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script src="game.js"></script>
+    <script type="module" src="src/game.js"></script>
 </body>
 
 </html>

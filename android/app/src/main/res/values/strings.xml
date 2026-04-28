@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Color Sort Game</string>
+    <string name="title_activity_main">Color Sort Game</string>
+    <string name="package_name">com.ravidandaiya.colorsort</string>
+    <string name="custom_url_scheme">com.ravidandaiya.colorsort</string>
+</resources>
