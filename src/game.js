@@ -23,6 +23,8 @@ const MIXING_RULES = {
 };
 
 const TUBE_CAPACITY = 4;
+const HINT_COST = 100;
+const VIAL_COST = 300;
 
 const THEMES = [
     {
@@ -214,6 +216,77 @@ class Game {
         this.initPlayer();
         this.initMeta();
         this.initLevel();
+        this.initParticles();
+        this.handleSplash();
+    }
+
+    initParticles() {
+        const container = document.getElementById('particlesContainer');
+        if (!container) return;
+
+        const particleCount = 25;
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'mana-particle';
+            
+            // Random properties
+            const size = Math.random() * 4 + 1;
+            const left = Math.random() * 100;
+            const duration = Math.random() * 15 + 10;
+            const delay = Math.random() * -20;
+            const opacity = Math.random() * 0.5 + 0.2;
+            const color = Math.random() > 0.5 ? '#b510d4' : '#d4af37'; // Purple or Gold
+
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.left = `${left}%`;
+            particle.style.bottom = `-20px`;
+            particle.style.setProperty('--d', `${duration}s`);
+            particle.style.setProperty('--o', opacity);
+            particle.style.animationDelay = `${delay}s`;
+            particle.style.backgroundColor = color;
+            particle.style.boxShadow = `0 0 10px ${color}`;
+
+            container.appendChild(particle);
+        }
+    }
+
+    handleSplash() {
+        const splash = document.getElementById('splashScreen');
+        const progress = document.getElementById('loadingProgress');
+        const loadingText = document.querySelector('.loading-text');
+        
+        if (!splash || !progress) return;
+
+        let width = 0;
+        const messages = [
+            "Channeling Arcane Energies...",
+            "Brewing Mystical Potions...",
+            "Calibrating Crystal Vials...",
+            "Incanting Sorting Spells...",
+            "Finalizing Alchemy Circle..."
+        ];
+
+        const interval = setInterval(() => {
+            width += Math.random() * 15;
+            if (width >= 100) {
+                width = 100;
+                clearInterval(interval);
+                
+                setTimeout(() => {
+                    splash.classList.add('fade-out');
+                    setTimeout(() => {
+                        splash.remove();
+                    }, 1000);
+                }, 500);
+            }
+            progress.style.width = width + '%';
+            
+            // Randomly update text
+            if (Math.random() > 0.7) {
+                loadingText.textContent = messages[Math.floor(Math.random() * messages.length)];
+            }
+        }, 150);
     }
 
     initPlayer() {
@@ -464,12 +537,12 @@ class Game {
         
         // Update Title UI
         const headerH1 = document.querySelector('.level-info h1');
-        headerH1.innerHTML = `Spell Level <span id="levelDisplay">${displayLevel}</span>`;
+        headerH1.innerHTML = `Level <span id="levelDisplay">${displayLevel}</span>`;
         this.levelDisplay = document.getElementById('levelDisplay');
         
         // Show Theme Banner temporarily
         const themeBanner = document.getElementById('themeBanner');
-        themeBanner.textContent = this.isDailyChallenge ? "Daily Special Spell" : theme.name;
+        themeBanner.textContent = this.isDailyChallenge ? "Daily Spell" : theme.name;
         themeBanner.classList.remove('show');
         void themeBanner.offsetWidth; // trigger reflow
         themeBanner.classList.add('show');
@@ -871,7 +944,6 @@ class Game {
     }
 
     addExtraTube() {
-        // Monetization Hook simulation
         if (this.tubes.length >= 12) {
             this.playSound('error');
             this.vibrate('error');
@@ -879,8 +951,18 @@ class Game {
             return;
         }
 
-        // Watch ad simulated
-        console.log("Showing rewarded video ad for extra tube...");
+        if (this.essence < VIAL_COST) {
+            this.playSound('error');
+            this.vibrate('error');
+            alert(`You need ${VIAL_COST} Diamonds to add a new vial!`);
+            return;
+        }
+
+        // Deduct diamonds
+        this.essence -= VIAL_COST;
+        localStorage.setItem('colorSortEssence', this.essence);
+        this.essenceDisplay.textContent = this.essence;
+
         this.playSound('win');
         this.vibrate('win');
         this.tubes.push([]);
@@ -900,8 +982,18 @@ class Game {
     showHint() {
         if (this.isAnimating) return;
 
-        // Monetization hook simulated
-        console.log("Showing rewarded video ad for a hint...");
+        if (this.essence < HINT_COST) {
+            this.playSound('error');
+            this.vibrate('error');
+            alert(`You need ${HINT_COST} Diamonds for a hint!`);
+            return;
+        }
+
+        // Deduct diamonds
+        this.essence -= HINT_COST;
+        localStorage.setItem('colorSortEssence', this.essence);
+        this.essenceDisplay.textContent = this.essence;
+
         this.playSound('win');
 
         this.clearHints();
@@ -966,18 +1058,44 @@ class Game {
             this.playSound('win');
             this.vibrate('win');
             
-            // Earn Essence
-            const reward = this.isDailyChallenge ? 200 : 50;
-            this.earnEssence(reward);
+            // Earn Diamonds
+            const reward = this.isDailyChallenge ? 200 : (50 + Math.floor(this.level / 5) * 10);
+            this.earnDiamonds(reward);
             
             setTimeout(() => {
                 document.getElementById('essenceReward').textContent = reward;
                 this.winModal.classList.remove('hidden');
+                this.triggerWinAnimation();
             }, 500);
         }
     }
 
-    earnEssence(amount) {
+    triggerWinAnimation() {
+        const container = document.getElementById('celebrationContainer');
+        if (!container) return;
+
+        container.innerHTML = '';
+        const colors = ['#d4af37', '#b510d4', '#00f0ff', '#39ff14', '#ff3366'];
+        
+        for (let i = 0; i < 50; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            
+            const x = (Math.random() - 0.5) * 400; // spread
+            const d = 2 + Math.random() * 3; // duration
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.backgroundColor = color;
+            confetti.style.setProperty('--x', `${x}px`);
+            confetti.style.setProperty('--d', `${d}s`);
+            confetti.style.animationDelay = Math.random() * 2 + 's';
+            
+            container.appendChild(confetti);
+        }
+    }
+
+    earnDiamonds(amount) {
         this.essence += amount;
         localStorage.setItem('colorSortEssence', this.essence);
         this.essenceDisplay.textContent = this.essence;
@@ -1071,13 +1189,13 @@ class Game {
                 this.renderBoard();
             } else {
                 this.playSound('error');
-                alert("Not enough Essence!");
+                alert("Not enough Diamonds!");
             }
         }
     }
 
     startDailyChallenge() {
-        if (confirm("Start today's Daily Spell? It's much harder but rewards 200 Essence!")) {
+        if (confirm("Start today's Daily Spell? It's much harder but rewards 200 Diamonds!")) {
             this.isDailyChallenge = true;
             this.initLevel();
             this.playSound('win');

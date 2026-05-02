@@ -10,13 +10,35 @@
 </head>
 
 <body>
+    <div id="splashScreen" class="splash-screen">
+        <div class="splash-content">
+            <div class="splash-logo">🔮</div>
+            <h1 class="splash-title">Mystic Alchemy</h1>
+            <p class="splash-subtitle">Potion Sort</p>
+            <div class="loading-container">
+                <div class="loading-bar">
+                    <div id="loadingProgress" class="loading-progress"></div>
+                </div>
+                <p class="loading-text">Channeling Arcane Energies...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="background-animations">
+        <div class="mana-orb"></div>
+        <div class="mana-orb"></div>
+        <div class="mana-orb"></div>
+        <div class="mystic-fog"></div>
+        <div class="particles-container" id="particlesContainer"></div>
+    </div>
+
     <div class="app-container">
         <header>
             <div class="level-info">
-                <h1>Spell Level <span id="levelDisplay">1</span></h1>
+                <h1>Level <span id="levelDisplay">1</span></h1>
                 <p><span id="playerTitle" class="player-title">Apprentice</span> <span id="playerName" class="player-name">Alchemist</span></p>
-                <div class="essence-counter">
-                    <span class="essence-icon">💎</span> <span id="essenceDisplay">0</span> Essence
+                <div class="essence-counter small-counter">
+                    <span class="essence-icon small-icon">💎</span> <span id="essenceDisplay">0</span>
                 </div>
             </div>
             
@@ -25,7 +47,20 @@
             </div>
 
             <div class="monetization-hooks">
-                <button class="btn btn-secondary icon-btn" onclick="game.toggleSettings()" title="Settings">⚙️</button>
+                <button class="btn btn-daily" id="dailyBtn" onclick="game.startDailyChallenge()">
+                    📅 Daily
+                </button>
+                <button class="btn btn-premium" onclick="game.showHint()">
+                    Hint <span class="badge">100 💎</span>
+                </button>
+                <button class="btn btn-premium" onclick="game.addExtraTube()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5v14" />
+                        <path d="M5 12h14" />
+                    </svg>
+                    Add Vial <span class="badge">300 💎</span>
+                </button>
                 <button class="btn btn-secondary" onclick="game.undoMove()">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -34,23 +69,7 @@
                     </svg>
                     Undo
                 </button>
-                <button class="btn btn-premium" onclick="game.showHint()">
-                    Hint <span class="badge">Ad</span>
-                </button>
-                <button class="btn btn-premium" onclick="game.addExtraTube()">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 5v14" />
-                        <path d="M5 12h14" />
-                    </svg>
-                    Add Vial <span class="badge">Ad</span>
-                </button>
-                <button class="btn btn-shop" id="shopBtn" onclick="game.toggleShop()">
-                    🛍️ Shop
-                </button>
-                <button class="btn btn-daily" id="dailyBtn" onclick="game.startDailyChallenge()">
-                    📅 Daily Spell
-                </button>
+                <button class="btn btn-secondary icon-btn" onclick="game.toggleSettings()" title="Settings">⚙️</button>
             </div>
         </header>
 
@@ -64,11 +83,15 @@
         </div>
 
         <div id="winModal" class="modal hidden">
-            <div class="modal-content glass">
+            <div id="celebrationContainer" class="celebration-container"></div>
+            <div class="modal-content glass win-content">
+                <div class="mascot-container">
+                    <img src="/assets/images/mascot_win.png" alt="Celebration Alchemist" class="win-mascot">
+                </div>
                 <h2>Transmutation Complete!</h2>
                 <p>Masterful potion sorting 🔮</p>
                 <div class="reward-display">
-                    +<span id="essenceReward">50</span> 💎 Essence
+                    +<span id="essenceReward">50</span> 💎 Diamonds
                 </div>
                 <div class="stars">✨✨✨</div>
                 <button class="btn btn-primary btn-large" onclick="game.nextLevel()">Next Level</button>
@@ -111,6 +134,14 @@
                             <p>Tactile magical feedback</p>
                         </div>
                         <button class="btn" id="vibrationToggleSettings" onclick="game.toggleVibration()">📳 Haptics On</button>
+                    </div>
+
+                    <div class="settings-item">
+                        <div class="settings-label">
+                            <h3>Emporium</h3>
+                            <p>Skins and laboratories</p>
+                        </div>
+                        <button class="btn btn-shop" id="shopBtnSettings" onclick="game.toggleShop(); game.toggleSettings();">🛍️ Open Shop</button>
                     </div>
                     
                     <div class="settings-divider"></div>
