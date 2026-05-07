@@ -1,12 +1,12 @@
 const COLOR_PALETTE = {
-    'red': '#FF2A2A',
-    'blue': '#0044FF',
-    'green': '#00DD00',
-    'yellow': '#FFD700',
-    'purple': '#AA00FF',
-    'pink': '#FF3399',
-    'orange': '#FF7700',
-    'cyan': '#00FFFF',
+    'red': '#FF0000',
+    'blue': '#001AFF',
+    'green': '#00D400',
+    'yellow': '#FFCC00',
+    'purple': '#9900FF',
+    'pink': '#FF0077',
+    'orange': '#FF6600',
+    'cyan': '#00F2FF',
 };
 
 const TUBE_CAPACITY = 4;
@@ -125,7 +125,7 @@ class Game {
         const container = document.getElementById('particlesContainer');
         if (!container) return;
 
-        const particleCount = 25;
+        const particleCount = 6; // Further reduced for performance
         for (let i = 0; i < particleCount; i++) {
             const particle = document.createElement('div');
             particle.className = 'mana-particle';
@@ -393,7 +393,7 @@ class Game {
         if (!COLOR_PALETTE[color]) return;
 
         // Spawn 8 tiny particles
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < 4; i++) { // Reduced from 8
             const particle = document.createElement('div');
             particle.className = 'splash-particle';
             particle.style.backgroundColor = COLOR_PALETTE[color];
@@ -596,16 +596,29 @@ class Game {
     }
 
     renderBoard(newTubeIndex = null, mergeGlowTubeIndex = null) {
+        // Only rebuild the board structure if the number of tubes changed
         if (this.boardElement.children.length !== this.tubes.length) {
             this.boardElement.innerHTML = '';
             this.tubes.forEach((tube, index) => {
                 const tubeContainer = document.createElement('div');
                 tubeContainer.className = 'tube-container';
+                tubeContainer.setAttribute('data-index', index);
                 tubeContainer.onclick = () => this.handleTubeClick(index);
+                
                 const tubeDiv = document.createElement('div');
                 tubeDiv.className = 'tube';
+                
                 const waterDiv = document.createElement('div');
                 waterDiv.className = 'water';
+                
+                // Pre-fill segments to keep DOM stable
+                for (let j = 0; j < TUBE_CAPACITY; j++) {
+                    const segment = document.createElement('div');
+                    segment.className = 'water-segment';
+                    segment.style.display = 'none';
+                    waterDiv.appendChild(segment);
+                }
+                
                 tubeDiv.appendChild(waterDiv);
                 tubeContainer.appendChild(tubeDiv);
                 this.boardElement.appendChild(tubeContainer);
@@ -613,49 +626,84 @@ class Game {
         }
 
         const containers = this.boardElement.children;
+            // Find skin preview from shopData if it exists
+            let skinUrl = null;
+            if (this.activeSkin !== 'skin-default' && this.shopData) {
+                const skinItem = this.shopData.find(it => it.id === this.activeSkin);
+                if (skinItem) skinUrl = skinItem.preview;
+            } else if (this.activeSkin !== 'skin-default') {
+                // Fallback for when shopData isn't rendered yet but skin is active
+                const fallbackSkins = {
+                    'skin-galaxy': '/assets/images/galaxy_glow_texture_1777181001273.png',
+                    'skin-gold': '/assets/images/molten_gold_texture_1777181017498.png',
+                    'skin-rainbow': '/assets/images/rainbow_pulse_texture_1777181035863.png'
+                };
+                skinUrl = fallbackSkins[this.activeSkin];
+            }
+
         this.tubes.forEach((tube, index) => {
             const tubeContainer = containers[index];
             const state = this.tubeStates[index];
 
-            let className = `tube-container ${this.selectedTubeIndex === index ? 'selected' : ''}`;
-            if (index === newTubeIndex) className += ' pop-in';
-            if (state.locked) className += ' locked';
-            if (state.moving || state.volatile) className += state.volatile ? ' storm volatile' : ' storm'; 
-            tubeContainer.className = className;
+            // Update tube container classes without full overwrite if possible
+            const isSelected = this.selectedTubeIndex === index;
+            tubeContainer.classList.toggle('selected', isSelected);
+            tubeContainer.classList.toggle('pop-in', index === newTubeIndex);
+            tubeContainer.classList.toggle('locked', state.locked);
+            
+            const isStorm = state.moving || state.volatile;
+            tubeContainer.classList.toggle('storm', isStorm);
+            tubeContainer.classList.toggle('volatile', !!state.volatile);
 
             const waterDiv = tubeContainer.querySelector('.water');
-            waterDiv.style.height = `${(tube.length / TUBE_CAPACITY) * 100}%`;
-            waterDiv.innerHTML = '';
+            const targetHeight = `${(tube.length / TUBE_CAPACITY) * 100}%`;
+            
+            if (waterDiv.style.height !== targetHeight) {
+                waterDiv.style.height = targetHeight;
+            }
 
-            for (let i = tube.length - 1; i >= 0; i--) {
-                const segment = document.createElement('div');
-                segment.className = 'water-segment';
-                
-                // Mechanic: Frozen
-                if (state.frozen && i === tube.length - 1) {
-                    segment.classList.add('frozen-layer');
-                }
-                
-                // Mechanic: Hidden
-                if (i <= state.hiddenUntil) {
-                    segment.classList.add('hidden-layer');
+            const currentSegments = waterDiv.children;
+
+            for (let i = 0; i < TUBE_CAPACITY; i++) {
+                const segment = currentSegments[i];
+                if (i < tube.length) {
+                    segment.style.display = 'block';
+                    const segmentIndex = tube.length - 1 - i;
+                    const color = tube[segmentIndex];
+                    const colorValue = COLOR_PALETTE[color];
+
+                    if (segment.style.backgroundColor !== colorValue) {
+                        segment.style.backgroundColor = colorValue;
+                    }
+
+                    const segmentHeight = `${100 / tube.length}%`;
+                    if (segment.style.height !== segmentHeight) {
+                        segment.style.height = segmentHeight;
+                    }
+
+                // States
+                const isFrozen = state.frozen && segmentIndex === tube.length - 1;
+                const isHidden = segmentIndex <= state.hiddenUntil;
+                const isMergeGlow = index === mergeGlowTubeIndex && segmentIndex === tube.length - 1;
+
+                    segment.classList.toggle('frozen-layer', isFrozen);
+                    segment.classList.toggle('hidden-layer', isHidden);
+                    segment.classList.toggle('merge-glow', isMergeGlow);
+                } else {
+                    segment.style.display = 'none';
                 }
 
-                if (index === mergeGlowTubeIndex && i === tube.length - 1) {
-                    segment.classList.add('merge-glow');
+                // Skin
+                if (skinUrl) {
+                    const bgImg = `url("${skinUrl}")`;
+                    if (segment.style.backgroundImage !== bgImg) {
+                        segment.style.backgroundImage = bgImg;
+                        segment.style.backgroundSize = 'cover';
+                        segment.style.backgroundBlendMode = 'overlay';
+                    }
+                } else {
+                    segment.style.backgroundImage = '';
                 }
-                
-                // Apply Skin Texture
-                if (this.activeSkin !== 'skin-default') {
-                    const skinUrl = this.getSkinUrl(this.activeSkin);
-                    segment.style.backgroundImage = `url("${skinUrl}")`;
-                    segment.style.backgroundSize = 'cover';
-                    segment.style.backgroundBlendMode = 'overlay';
-                }
-
-                segment.style.backgroundColor = COLOR_PALETTE[tube[i]];
-                segment.style.height = `${100 / tube.length}%`;
-                waterDiv.appendChild(segment);
             }
         });
     }
@@ -954,6 +1002,12 @@ class Game {
             
             // Earn Diamonds
             const reward = this.isDailyChallenge ? 200 : (50 + Math.floor(this.level / 5) * 10);
+            
+            if (this.isDailyChallenge) {
+                // Mark today as won
+                localStorage.setItem('colorSortLastDailyWin', new Date().toDateString());
+            }
+            
             this.earnDiamonds(reward);
             
             setTimeout(() => {
@@ -971,7 +1025,7 @@ class Game {
         container.innerHTML = '';
         const colors = ['#d4af37', '#b510d4', '#00f0ff', '#39ff14', '#ff3366'];
         
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < 25; i++) { // Reduced from 50
             const confetti = document.createElement('div');
             confetti.className = 'confetti';
             
@@ -1009,6 +1063,17 @@ class Game {
 
     startDailyChallenge() {
         if (this.isDailyChallenge) return;
+
+        // Check if already completed today
+        const lastDate = localStorage.getItem('colorSortLastDailyWin');
+        const today = new Date().toDateString();
+        
+        if (lastDate === today) {
+            this.playSound('error');
+            alert("You have already mastered today's Daily Spell! Come back tomorrow.");
+            return;
+        }
+
         this.mainGameLevel = this.level;
         this.isDailyChallenge = true;
         this.initLevel();
@@ -1055,7 +1120,7 @@ class Game {
 
     renderShop() {
         this.shopItemsContainer.innerHTML = '';
-        const items = this.shopTab === 'skins' ? [
+        this.shopData = this.shopTab === 'skins' ? [
             { id: 'skin-default', name: 'Default', price: 0, preview: '' },
             { id: 'skin-galaxy', name: 'Galaxy Glow', price: 500, preview: '/assets/images/galaxy_glow_texture_1777181001273.png' },
             { id: 'skin-gold', name: 'Molten Gold', price: 1000, preview: '/assets/images/molten_gold_texture_1777181017498.png' },
@@ -1065,7 +1130,7 @@ class Game {
             { id: 'lab-premium', name: 'Master Laboratory', price: 2000, preview: '/assets/images/alchemist_lab_bg_1777181053658.png' }
         ];
 
-        items.forEach(item => {
+        this.shopData.forEach(item => {
             const isOwned = this.purchasedItems.includes(item.id);
             const isActive = this.activeSkin === item.id || this.activeLab === item.id;
             
@@ -1121,32 +1186,6 @@ class Game {
         }
     }
 
-    startDailyChallenge() {
-        if (this.isDailyChallenge) return;
-        this.mainGameLevel = this.level;
-        this.isDailyChallenge = true;
-        this.initLevel();
-        this.addBackButton();
-    }
-
-    addBackButton() {
-        if (document.getElementById('backToMainBtn')) return;
-        const header = document.querySelector('.monetization-hooks');
-        const backBtn = document.createElement('button');
-        backBtn.id = 'backToMainBtn';
-        backBtn.className = 'btn btn-secondary';
-        backBtn.innerHTML = '⬅️ Back to Main';
-        backBtn.onclick = () => this.exitDaily();
-        header.prepend(backBtn);
-    }
-
-    exitDaily() {
-        this.isDailyChallenge = false;
-        this.level = this.mainGameLevel;
-        const backBtn = document.getElementById('backToMainBtn');
-        if (backBtn) backBtn.remove();
-        this.initLevel();
-    }
 
     showLegal(type) {
         this.legalModal.classList.remove('hidden');

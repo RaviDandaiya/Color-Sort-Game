@@ -1,5 +1,5 @@
 :root {
-    --bg-color: #050508;
+    --bg-color: #020204;
     --glass-bg: rgba(255, 255, 255, 0.04);
     --glass-border: rgba(255, 255, 255, 0.1);
     --glass-highlight: rgba(255, 255, 255, 0.15);
@@ -7,9 +7,12 @@
     --text-secondary: rgba(255, 255, 255, 0.6);
 
     /* Premium accents */
-    --accent-primary: #00f2ff; /* Cyber Cyan */
+    --accent-primary: #00f2ff;
     --accent-hover: #00d4e0;
     --accent-gradient: linear-gradient(135deg, #00f2ff, #7000ff);
+    --surface-bg: rgba(255, 255, 255, 0.05);
+    --surface-border: rgba(255, 255, 255, 0.1);
+    --surface-hover: rgba(255, 255, 255, 0.12);
     
     /* Theme specific variables */
     --tube-border-color: rgba(255, 255, 255, 0.2);
@@ -28,23 +31,25 @@
     font-family: 'Outfit', sans-serif;
 }
 
+html, body {
+    height: 100vh;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    touch-action: none;
+    position: fixed;
+    width: 100%;
+}
+
 body {
-    background-color: var(--bg-color);
+    background-color: #020204;
     color: var(--text-primary);
-    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow-y: auto;
-    overflow-x: hidden;
-    background-image: 
-        radial-gradient(circle at 50% -20%, var(--bg-gradient-1), transparent 50%),
-        radial-gradient(circle at 50% 120%, var(--bg-gradient-2), transparent 50%);
-    background-size: cover;
+    background: radial-gradient(circle at top right, #0a0414, #020204 70%);
     background-attachment: fixed;
-    transition: background 1s ease;
-    position: relative;
-    z-index: 1;
 }
 
 @keyframes slowBgZoom {
@@ -61,16 +66,15 @@ body {
     overflow: hidden;
 }
 
+/* Optimized Orbs - using simple opacity instead of heavy blur filters */
 .mana-orb {
     position: fixed;
-    width: 900px;
-    height: 900px;
-    background: radial-gradient(circle, rgba(0, 242, 255, 0.05) 0%, transparent 70%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(0, 242, 255, 0.02) 0%, transparent 70%);
     border-radius: 50%;
-    filter: blur(150px);
     pointer-events: none;
     z-index: -1;
-    animation: driftOrb 30s infinite alternate ease-in-out;
 }
 
 .mana-orb:nth-child(1) { top: -400px; left: -400px; }
@@ -83,7 +87,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    background: linear-gradient(transparent, rgba(0,0,0,0.2)); /* Simpler gradient instead of SVG noise */
     pointer-events: none;
     z-index: -2;
     opacity: 0.3;
@@ -137,9 +141,10 @@ body::before {
         radial-gradient(circle at 85% 30%, var(--bg-gradient-2) 0%, transparent 60%);
     pointer-events: none;
     z-index: -1;
-    opacity: 0.6;
-    filter: blur(40px); /* Soften the gradients significantly */
-    transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.2;
+    filter: blur(5px); /* Further reduced for performance */
+    transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, opacity;
 }
 
 /* Theme-specific background overrides */
@@ -172,29 +177,24 @@ body.skin-rainbow::before {
 }
 
 @keyframes rainbowShift {
-    0% { filter: hue-rotate(0deg) blur(40px); transform: scale(1) rotate(0deg); }
-    50% { transform: scale(1.1) rotate(5deg); }
-    100% { filter: hue-rotate(360deg) blur(40px); transform: scale(1) rotate(0deg); }
+    0% { filter: hue-rotate(0deg); transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.05) rotate(2deg); }
+    100% { filter: hue-rotate(360deg); transform: scale(1) rotate(0deg); }
 }
 
 /* Magic Science Grain Effect */
+/* Removed heavy SVG grain effect */
 body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.04;
-    pointer-events: none;
-    z-index: 1000;
+    display: none;
 }
 
 .app-container {
     width: 100%;
     max-width: 500px;
-    min-height: 100vh;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    justify-content: space-between;
     padding: 0;
     position: relative;
     margin: 0 auto;
@@ -250,15 +250,13 @@ header {
     display: flex;
     align-items: center;
     gap: 0.8rem;
-    padding: 1rem 1.5rem;
-    background: var(--glass-bg);
-    backdrop-filter: blur(25px);
-    border: 1px solid var(--glass-border);
-    border-radius: 24px;
-    font-weight: 800;
+    padding: 0.8rem 1.2rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    font-weight: 700;
     color: var(--accent-primary);
-    overflow: hidden;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .essence-counter::before {
@@ -344,7 +342,7 @@ header {
     margin-top: auto;
     position: sticky;
     bottom: 0;
-    background: linear-gradient(to top, var(--bg-color), transparent);
+    background: transparent;
     z-index: 1000;
 }
 
@@ -368,30 +366,30 @@ header {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.8rem;
-    padding: 0.8rem 1.8rem;
-    border-radius: 100px;
-    font-weight: 600;
+    gap: 0.6rem;
+    padding: 0.8rem 1.6rem;
+    border-radius: 14px;
+    font-weight: 700;
     font-size: 0.8rem;
-    letter-spacing: 1px;
     text-transform: uppercase;
+    letter-spacing: 1px;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.2, 1, 0.2, 1);
-    border: 1px solid var(--glass-border);
-    background: var(--glass-bg);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.2));
     color: var(--text-primary);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.3),
+        inset 0 1px 1px rgba(255, 255, 255, 0.05);
     position: relative;
     overflow: hidden;
 }
 
 .btn:hover {
-    background: var(--glass-highlight);
-    border-color: rgba(255, 255, 255, 0.3);
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+    border-color: var(--accent-primary);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
 }
 
 .btn::after {
@@ -413,31 +411,26 @@ header {
 
 .btn-premium {
     background: linear-gradient(135deg, #00f2ff 0%, #7000ff 100%);
-    color: #050508;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    color: #fff;
+    border: none;
+    font-weight: 900;
     box-shadow: 
-        0 8px 25px rgba(0, 0, 0, 0.4),
-        inset 0 2px 4px rgba(255, 255, 255, 0.5),
-        inset 0 -2px 10px rgba(0, 0, 0, 0.1);
+        0 0 20px rgba(0, 242, 255, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.4);
+    animation: btnAura 3s infinite alternate;
 }
 
-.btn-premium span {
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
+@keyframes btnAura {
+    0% { box-shadow: 0 0 15px rgba(0, 242, 255, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.4); }
+    100% { box-shadow: 0 0 30px rgba(112, 0, 255, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.4); }
 }
 
 .btn-premium:hover {
-    filter: brightness(1.15) saturate(1.1);
+    filter: brightness(1.2);
     transform: translateY(-4px) scale(1.05);
     box-shadow: 
-        0 15px 40px rgba(0, 242, 255, 0.4),
+        0 15px 40px rgba(0, 242, 255, 0.5),
         inset 0 2px 6px rgba(255, 255, 255, 0.7);
-}
-
-.btn-premium:active {
-    transform: translateY(-1px) scale(0.98);
 }
 
 .badge {
@@ -480,9 +473,11 @@ header {
     align-items: center;
     gap: 1.5rem;
     cursor: pointer;
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    filter: drop-shadow(0 15px 15px rgba(0,0,0,0.4));
+    transition: transform 0.3s ease-out;
+    filter: none; /* Removed drop-shadow from containers for performance */
     position: relative;
+    will-change: transform;
+    transform: translateZ(0);
 }
 
 
@@ -708,55 +703,47 @@ header {
 }
 
 .tube {
-    width: 60px;
-    height: 200px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
-    border-left: 2px solid rgba(255, 255, 255, 0.3);
-    border-right: 2px solid rgba(255, 255, 255, 0.1);
-    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    width: 65px;
+    height: 220px;
+    background: linear-gradient(135deg, #0f0f1a, #050508); /* Deep solid base */
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    border-top: none;
     border-radius: 0 0 40px 40px;
     position: relative;
     overflow: hidden;
-    backdrop-filter: blur(18px); /* Deeper glass blur */
-    -webkit-backdrop-filter: blur(18px);
     box-shadow: 
-        inset 0 0 25px rgba(255, 255, 255, 0.2),
-        inset -10px 0 20px rgba(0, 0, 0, 0.3),
-        0 25px 50px rgba(0, 0, 0, 0.7);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-/* Enhanced Caustics / Refraction */
-.tube::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: 
-        linear-gradient(90deg, 
-            rgba(255, 255, 255, 0.2) 0%, 
-            transparent 15%, 
-            transparent 85%, 
-            rgba(255, 255, 255, 0.2) 100%),
-        linear-gradient(to right,
-            transparent 30%,
-            rgba(255, 255, 255, 0.05) 35%,
-            rgba(255, 255, 255, 0.1) 40%,
-            transparent 45%
-        );
-    pointer-events: none;
-    z-index: 10;
+        0 15px 35px rgba(0, 0, 0, 0.9),
+        inset 0 0 15px rgba(255, 255, 255, 0.05); /* Inner rim glow */
+    will-change: transform;
+    transform: translateZ(0);
 }
 
 .tube::after {
     content: '';
     position: absolute;
     top: 0;
-    left: 15%;
-    width: 15%;
-    height: 100%;
-    background: linear-gradient(to right, rgba(255, 255, 255, 0.2), transparent);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, 
+        rgba(255, 255, 255, 0.03) 0%, 
+        transparent 15%, 
+        transparent 85%, 
+        rgba(255, 255, 255, 0.03) 100%);
     pointer-events: none;
-    z-index: 15;
+}
+
+.tube::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, 
+        rgba(255, 255, 255, 0.1) 0%, 
+        transparent 20%, 
+        transparent 80%, 
+        rgba(255, 255, 255, 0.05) 100%);
+    pointer-events: none;
+    z-index: 10;
 }
 
 .water {
@@ -764,27 +751,28 @@ header {
     bottom: 0;
     left: 0;
     width: 100%;
-    transition: height 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: height 0.3s ease-out;
     z-index: 1;
+    will-change: height, transform;
+    opacity: 1 !important;
 }
 
 .water-segment {
     width: 100%;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.4s ease, height 0.4s ease;
     position: relative;
-    margin: 0;
-    box-shadow: 
-        inset -8px 0 15px rgba(0, 0, 0, 0.4),
-        inset 5px 0 10px rgba(255, 255, 255, 0.1);
+    will-change: background-color, height, transform;
+    opacity: 1 !important;
+    background-image: none !important;
+    box-shadow: none !important;
 }
 
-/* Ensure the first segment also has a clear top if needed, but the wave handles it */
-.water-segment:first-child {
-    border-top: none;
+@keyframes liquidEssence {
+    0% { background-position: 0 0, 0 0, 0 0; }
+    100% { background-position: 0 0, 0 -20px, 0 -15px; }
 }
 
-/* Unified Liquid Surface (Wave) */
-/* Partition Surface (Oval Top for every segment) */
+/* Every segment gets a curved surface to look volumetric */
 .water-segment::after {
     content: '';
     position: absolute;
@@ -794,29 +782,24 @@ header {
     height: 16px;
     background: inherit;
     border-radius: 50%;
-    filter: brightness(1.15) saturate(1.1);
+    filter: brightness(1.25) saturate(1.2);
     z-index: 2;
+    box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.3);
+}
+
+/* The top-most segment has a more pronounced highlight */
+.water-segment:first-child::after {
+    filter: brightness(1.4) saturate(1.3);
+    z-index: 5;
     box-shadow: 
         inset 0 2px 4px rgba(255, 255, 255, 0.4),
-        inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+        0 2px 10px rgba(255, 255, 255, 0.1);
 }
 
-.water-segment:first-child::after {
-    height: 18px;
-    top: -9px;
-    z-index: 10;
-    filter: brightness(1.25) saturate(1.2);
-    box-shadow: 
-        inset 0 3px 6px rgba(255, 255, 255, 0.6),
-        inset 0 -2px 5px rgba(0, 0, 0, 0.15),
-        0 5px 15px rgba(255, 255, 255, 0.2);
+.water-segment:last-child {
+    border-radius: 0 0 32px 32px;
 }
 
-@keyframes liquidWave {
-    /* Animation removed per user request */
-}
-
-/* Glass Reflection Overlay (on every segment) */
 .water-segment::before {
     content: '';
     position: absolute;
@@ -825,7 +808,7 @@ header {
     width: 20%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    z-index: 5;
+    z-index: 2;
     pointer-events: none;
 }
 
@@ -835,7 +818,16 @@ header {
     100% { transform: translateY(-20px); opacity: 0; }
 }
 
-/* Liquid Slosh Animation removed per user request */
+/* Liquid Slosh Animation */
+.tube-container.slosh {
+    animation: slosh 0.3s ease-in-out;
+}
+
+@keyframes slosh {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(1deg); }
+    75% { transform: rotate(-1deg); }
+}
 
 /* Add a slight curve to the top of the water to simulate meniscus */
 .water-segment:first-child::before {
@@ -856,13 +848,23 @@ header {
     border-radius: 0 0 32px 32px;
 }
 
+/* Liquid Slosh Animation */
+.tube-container.slosh {
+    animation: slosh 0.3s ease-in-out;
+}
+
+@keyframes slosh {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(1deg); }
+    75% { transform: rotate(-1deg); }
+}
+
 /* Magical floating particles removed per user request */
 
 .modal {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(25px);
+    background: rgba(0, 0, 0, 0.85); /* Much darker overlay */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -874,20 +876,19 @@ header {
 .modal.hidden {
     opacity: 0;
     pointer-events: none;
-    backdrop-filter: blur(0px);
 }
 
 .modal-content {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #151520, #0a0a10);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
     padding: 3rem;
     border-radius: 32px;
     text-align: center;
     transform: scale(1) translateY(0);
     transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
     box-shadow: 
-        0 30px 60px rgba(0, 0, 0, 0.5),
-        inset 0 0 40px rgba(255, 255, 255, 0.05);
+        0 40px 100px rgba(0, 0, 0, 0.9),
+        inset 0 0 50px rgba(255, 255, 255, 0.02);
 }
 
 .modal.hidden .modal-content {
@@ -1013,17 +1014,18 @@ header {
 }
 
 .shop-item {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--glass-border);
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     padding: 1rem;
     text-align: center;
-    transition: transform 0.2s;
+    transition: all 0.2s;
 }
 
 .shop-item:hover {
     transform: translateY(-5px);
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--accent-primary);
 }
 
 .item-preview {
@@ -1169,10 +1171,15 @@ header {
     align-items: center;
     gap: 1rem;
     padding: 1rem 1.25rem;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 16px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.settings-item:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .settings-item .btn {
@@ -1216,7 +1223,7 @@ header {
     background: rgba(15, 15, 20, 0.95) !important;
     border: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(40px);
+    backdrop-filter: blur(10px);
 }
 
 .modal-header {
@@ -1468,6 +1475,17 @@ header {
     overflow: hidden;
     border: 1px solid rgba(255, 215, 0, 0.1);
     position: relative;
+}
+
+/* Hint Visibility Fix */
+.hint-highlight {
+    animation: hintGlow 1.5s infinite alternate;
+    z-index: 20;
+}
+
+@keyframes hintGlow {
+    0% { box-shadow: 0 0 15px rgba(0, 242, 255, 0.3); border-color: rgba(255, 255, 255, 0.2); transform: scale(1); }
+    100% { box-shadow: 0 0 35px rgba(0, 242, 255, 0.8); border-color: var(--accent-primary); transform: scale(1.05); }
 }
 
 .loading-progress {
