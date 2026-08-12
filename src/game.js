@@ -1,12 +1,23 @@
 const COLOR_PALETTE = {
-    'red': '#FF0000',
-    'blue': '#001AFF',
-    'green': '#00D400',
-    'yellow': '#FFCC00',
-    'purple': '#9900FF',
-    'pink': '#FF0077',
-    'orange': '#FF6600',
-    'cyan': '#00F2FF',
+    'red': '#FF6B81',
+    'blue': '#54A0FF',
+    'green': '#2ED573',
+    'yellow': '#FFC312',
+    'purple': '#A55EEA',
+    'pink': '#FF6B9D',
+    'orange': '#FF9F43',
+    'cyan': '#48DBFB',
+};
+
+const FRUIT_MAPPING = {
+    'red': '🍓',
+    'blue': '🫐',
+    'green': '🍏',
+    'yellow': '🍋',
+    'purple': '🍇',
+    'pink': '🍑',
+    'orange': '🍊',
+    'cyan': '🍈',
 };
 
 const TUBE_CAPACITY = 4;
@@ -17,14 +28,14 @@ const THEMES = [
     {
         id: "origins",
         range: [1, 10],
-        name: "Arcane Lab",
-        bgColor: "#030305",
-        bgGradient1: "rgba(0, 242, 255, 0.05)",
-        bgGradient2: "rgba(112, 0, 255, 0.05)",
-        tubeBorder: "rgba(255, 255, 255, 0.1)",
-        tubeBase: "linear-gradient(90deg, #111, #333, #111)",
-        tubeShadow: "0 10px 30px rgba(0, 0, 0, 0.5)",
-        tubeRadius: "0 0 30px 30px",
+        name: "Candy Garden",
+        bgColor: "#E8F4FD",
+        bgGradient1: "rgba(255, 182, 193, 0.15)",
+        bgGradient2: "rgba(173, 216, 230, 0.15)",
+        tubeBorder: "rgba(255, 255, 255, 0.9)",
+        tubeBase: "linear-gradient(90deg, #fff, #f0f0f0, #fff)",
+        tubeShadow: "0 8px 20px rgba(100, 140, 180, 0.15)",
+        tubeRadius: "22px 22px 34px 34px",
         particle: "'✨'",
         bgPattern: `none`,
         splashRadius: "50%"
@@ -32,14 +43,14 @@ const THEMES = [
     {
         id: "frozen",
         range: [11, 20],
-        name: "Frost Cavern",
-        bgColor: "#010a15",
-        bgGradient1: "rgba(100, 200, 255, 0.1)",
-        bgGradient2: "rgba(200, 255, 255, 0.05)",
-        tubeBorder: "rgba(200, 255, 255, 0.2)",
-        tubeBase: "linear-gradient(90deg, #0a1525, #152535, #0a1525)",
-        tubeShadow: "0 10px 30px rgba(100, 200, 255, 0.2)",
-        tubeRadius: "0 0 30px 30px",
+        name: "Snow Cloud",
+        bgColor: "#E6F2FF",
+        bgGradient1: "rgba(173, 216, 255, 0.2)",
+        bgGradient2: "rgba(200, 230, 255, 0.15)",
+        tubeBorder: "rgba(200, 235, 255, 0.9)",
+        tubeBase: "linear-gradient(90deg, #f5faff, #e8f4ff, #f5faff)",
+        tubeShadow: "0 8px 20px rgba(100, 180, 230, 0.18)",
+        tubeRadius: "22px 22px 34px 34px",
         particle: "'❄️'",
         bgPattern: `none`,
         splashRadius: "50%"
@@ -47,29 +58,29 @@ const THEMES = [
     {
         id: "grove",
         range: [21, 30],
-        name: "Enchanted Grove",
-        bgColor: "#051505",
-        bgGradient1: "rgba(50, 255, 100, 0.05)",
-        bgGradient2: "rgba(150, 255, 50, 0.05)",
-        tubeBorder: "rgba(150, 255, 150, 0.1)",
-        tubeBase: "linear-gradient(90deg, #0a200a, #153015, #0a200a)",
-        tubeShadow: "0 10px 30px rgba(50, 255, 50, 0.2)",
-        tubeRadius: "0 0 30px 30px",
-        particle: "'🍃'",
+        name: "Magic Forest",
+        bgColor: "#EAFFF0",
+        bgGradient1: "rgba(144, 238, 144, 0.12)",
+        bgGradient2: "rgba(200, 255, 180, 0.1)",
+        tubeBorder: "rgba(200, 255, 200, 0.9)",
+        tubeBase: "linear-gradient(90deg, #f0fff5, #e5ffe0, #f0fff5)",
+        tubeShadow: "0 8px 20px rgba(100, 200, 120, 0.15)",
+        tubeRadius: "22px 22px 34px 34px",
+        particle: "'🍀'",
         bgPattern: `none`,
         splashRadius: "50%"
     },
     {
         id: "illusion",
         range: [31, 50],
-        name: "Celestial Void",
-        bgColor: "#150020",
-        bgGradient1: "rgba(200, 0, 255, 0.08)",
-        bgGradient2: "rgba(50, 0, 150, 0.08)",
-        tubeBorder: "rgba(255, 150, 255, 0.15)",
-        tubeBase: "linear-gradient(90deg, #100020, #250040, #100020)",
-        tubeShadow: "0 10px 30px rgba(200, 0, 255, 0.3)",
-        tubeRadius: "0 0 30px 30px",
+        name: "Star Palace",
+        bgColor: "#F0E6FF",
+        bgGradient1: "rgba(200, 160, 255, 0.12)",
+        bgGradient2: "rgba(180, 140, 230, 0.1)",
+        tubeBorder: "rgba(220, 200, 255, 0.9)",
+        tubeBase: "linear-gradient(90deg, #f5f0ff, #ece4ff, #f5f0ff)",
+        tubeShadow: "0 8px 20px rgba(150, 100, 220, 0.15)",
+        tubeRadius: "22px 22px 34px 34px",
         particle: "'⭐'",
         bgPattern: `none`,
         splashRadius: "50%"
@@ -77,15 +88,15 @@ const THEMES = [
     {
         id: "chaos",
         range: [51, 9999],
-        name: "Abyssal Depths",
-        bgColor: "#050010",
-        bgGradient1: "rgba(255, 0, 50, 0.05)",
-        bgGradient2: "rgba(50, 0, 255, 0.05)",
-        tubeBorder: "rgba(255, 50, 50, 0.1)",
-        tubeBase: "linear-gradient(90deg, #1a0000, #33001a, #1a0000)",
-        tubeShadow: "0 10px 30px rgba(255, 0, 50, 0.3)",
-        tubeRadius: "0 0 30px 30px",
-        particle: "'🔥'",
+        name: "Rainbow World",
+        bgColor: "#FFF5E6",
+        bgGradient1: "rgba(255, 200, 150, 0.12)",
+        bgGradient2: "rgba(255, 180, 200, 0.1)",
+        tubeBorder: "rgba(255, 220, 200, 0.9)",
+        tubeBase: "linear-gradient(90deg, #fff8f0, #fff0e8, #fff8f0)",
+        tubeShadow: "0 8px 20px rgba(220, 120, 80, 0.15)",
+        tubeRadius: "22px 22px 34px 34px",
+        particle: "'🌟'",
         bgPattern: `none`,
         splashRadius: "50%"
     }
@@ -113,6 +124,10 @@ class Game {
         this.legalModal = document.getElementById('legalModal');
         this.legalTitle = document.getElementById('legalTitle');
         this.legalText = document.getElementById('legalText');
+        this.mascotGuide = document.getElementById('mascotGuide');
+
+        this.tutorialCompleted = localStorage.getItem('colorSortTutorial') === 'true';
+        this.tutorialStep = 0;
 
         this.initPlayer();
         this.initMeta();
@@ -161,11 +176,11 @@ class Game {
 
         let width = 0;
         const messages = [
-            "Channeling Arcane Energies...",
-            "Brewing Mystical Potions...",
-            "Calibrating Crystal Vials...",
-            "Incanting Sorting Spells...",
-            "Finalizing Alchemy Circle..."
+            "Mixing up the magic...",
+            "Polishing the bottles...",
+            "Stirring the rainbow...",
+            "Adding sparkles...",
+            "Almost ready to play!"
         ];
 
         const interval = setInterval(() => {
@@ -193,8 +208,8 @@ class Game {
     initPlayer() {
         let playerName = localStorage.getItem('colorSortPlayerName');
         if (!playerName) {
-            const prefixes = ['Pro', 'Master', 'Lord', 'Dr', 'Captain', 'Ninja'];
-            const names = ['Sorter', 'Pourer', 'Mixer', 'Brain', 'Liquid', 'Genius'];
+            const prefixes = ['Happy', 'Super', 'Lucky', 'Star', 'Magic', 'Cool'];
+            const names = ['Sorter', 'Player', 'Mixer', 'Buddy', 'Hero', 'Kid'];
             playerName = `${prefixes[Math.floor(Math.random() * prefixes.length)]}${names[Math.floor(Math.random() * names.length)]}${Math.floor(Math.random() * 999)}`;
             localStorage.setItem('colorSortPlayerName', playerName);
         }
@@ -216,12 +231,12 @@ class Game {
 
     updatePlayerTitle() {
         const titles = [
-            { min: 1, title: "Apprentice" },
-            { min: 10, title: "Journeyman" },
-            { min: 30, title: "Alchemist" },
-            { min: 60, title: "Grand Alchemist" },
-            { min: 100, title: "Master of Chaos" },
-            { min: 150, title: "Arcane Legend" }
+            { min: 1, title: "Beginner" },
+            { min: 10, title: "Color Fan" },
+            { min: 30, title: "Sorter" },
+            { min: 60, title: "Color Expert" },
+            { min: 100, title: "Rainbow Master" },
+            { min: 150, title: "Color Legend" }
         ];
 
         const titleObj = titles.reverse().find(t => this.level >= t.min);
@@ -436,10 +451,12 @@ class Game {
         
         this.winModal.classList.add('hidden');
 
-        if (!this.isDailyChallenge && this.level === 1) {
-            this.tutorialTip.classList.remove('hidden');
+        if (!this.isDailyChallenge && this.level === 1 && !this.tutorialCompleted) {
+            this.tutorialStep = 1;
+            this.updateTutorial();
         } else {
-            this.tutorialTip.classList.add('hidden');
+            this.tutorialStep = 0;
+            if (this.tutorialTip) this.tutorialTip.classList.add('hidden');
         }
 
         // Apply visual theme based on level progression
@@ -448,7 +465,7 @@ class Game {
         // Update Title UI if elements exist
         const headerH1 = document.querySelector('.level-info h1');
         if (headerH1) {
-            headerH1.innerHTML = `Level <span id="levelDisplay">${displayLevel}</span>`;
+            headerH1.innerHTML = `\u2B50 Level <span id="levelDisplay">${displayLevel}</span>`;
             this.levelDisplay = document.getElementById('levelDisplay');
         }
         
@@ -607,6 +624,15 @@ class Game {
                 
                 const tubeDiv = document.createElement('div');
                 tubeDiv.className = 'tube';
+
+                // Decorative bottle details only; water and puzzle state remain in
+                // the existing `.water` element below.
+                const bottleNeck = document.createElement('div');
+                bottleNeck.className = 'bottle-neck';
+                const bottleRim = document.createElement('div');
+                bottleRim.className = 'bottle-rim';
+                const bottleLabel = document.createElement('div');
+                bottleLabel.className = 'bottle-label';
                 
                 const waterDiv = document.createElement('div');
                 waterDiv.className = 'water';
@@ -619,6 +645,9 @@ class Game {
                     waterDiv.appendChild(segment);
                 }
                 
+                tubeDiv.appendChild(bottleNeck);
+                tubeDiv.appendChild(bottleRim);
+                tubeDiv.appendChild(bottleLabel);
                 tubeDiv.appendChild(waterDiv);
                 tubeContainer.appendChild(tubeDiv);
                 this.boardElement.appendChild(tubeContainer);
@@ -648,12 +677,28 @@ class Game {
             // Update tube container classes without full overwrite if possible
             const isSelected = this.selectedTubeIndex === index;
             tubeContainer.classList.toggle('selected', isSelected);
+            tubeContainer.classList.toggle(
+                'destination-preview',
+                this.selectedTubeIndex !== null && !isSelected && this.canPour(this.selectedTubeIndex, index)
+            );
             tubeContainer.classList.toggle('pop-in', index === newTubeIndex);
             tubeContainer.classList.toggle('locked', state.locked);
             
             const isStorm = state.moving || state.volatile;
             tubeContainer.classList.toggle('storm', isStorm);
             tubeContainer.classList.toggle('volatile', !!state.volatile);
+
+            const labelDiv = tubeContainer.querySelector('.bottle-label');
+            if (labelDiv) {
+                if (tube.length > 0) {
+                    const bottomColor = tube[0];
+                    const fruit = FRUIT_MAPPING[bottomColor] || '';
+                    if (labelDiv.textContent !== fruit) labelDiv.textContent = fruit;
+                    labelDiv.style.opacity = '1';
+                } else {
+                    labelDiv.style.opacity = '0';
+                }
+            }
 
             const waterDiv = tubeContainer.querySelector('.water');
             const targetHeight = `${(tube.length / TUBE_CAPACITY) * 100}%`;
@@ -717,14 +762,22 @@ class Game {
         return skins[skinId] || '';
     }
 
+
     handleTubeClick(index) {
         if (this.isAnimating) return;
+        
+        // Hide tutorial tip on first interaction
+        if (this.tutorialTip && !this.tutorialTip.classList.contains('hidden') && this.tutorialStep === 1) {
+            // Handled by updateTutorial logic below
+        }
+
         const state = this.tubeStates[index];
 
         if (state.locked) {
             this.playSound('error');
             this.vibrate('error');
             this.shakeTube(index);
+            this.reactMascot('confused');
             return;
         }
 
@@ -755,22 +808,35 @@ class Game {
                 this.playSound('error');
                 this.vibrate('error');
                 this.shakeTube(index);
+                this.reactMascot('confused');
                 return;
             }
             this.playSound('tap');
             this.vibrate('tap');
             this.selectedTubeIndex = index;
             this.renderBoard();
+            this.reactMascot('ready');
+
+            if (this.tutorialStep === 1) {
+                this.tutorialStep = 2;
+                this.updateTutorial();
+            }
         } else {
             // Try to pour
             if (this.canPour(this.selectedTubeIndex, index)) {
                 this.playSound('pour');
                 this.vibrate('pour');
                 this.pour(this.selectedTubeIndex, index);
+
+                if (this.tutorialStep === 2) {
+                    this.tutorialStep = 3;
+                    this.updateTutorial();
+                }
             } else {
                 this.playSound('error');
                 this.vibrate('error');
                 this.shakeTube(index); // Invalid move feedback
+                this.reactMascot('confused');
                 this.selectedTubeIndex = null;
                 this.renderBoard();
             }
@@ -779,10 +845,15 @@ class Game {
 
     shakeTube(index) {
         const tubeElements = this.boardElement.querySelectorAll('.tube-container');
-        tubeElements[index].classList.add('shake');
+        const tube = tubeElements[index];
+        if (!tube) return;
+
+        tube.classList.remove('invalid-move');
+        void tube.offsetWidth;
+        tube.classList.add('shake', 'invalid-move');
         setTimeout(() => {
-            tubeElements[index]?.classList.remove('shake');
-        }, 400);
+            tube.classList.remove('shake', 'invalid-move');
+        }, 360);
     }
 
     canPour(fromIdx, toIdx) {
@@ -820,47 +891,153 @@ class Game {
         // Standard logic: move as many as possible of the same color
         const actualMoveAmount = Math.min(amountToMove, TUBE_CAPACITY - toTube.length);
 
-        // Save history for undo
-        this.moveHistory.push({ from: fromIdx, to: toIdx, amount: actualMoveAmount, color: fromColor });
-
-        // Execute move
-        for (let i = 0; i < actualMoveAmount; i++) {
-            toTube.push(fromTube.pop());
-            
-            // Reveal fromTube hidden segments if exposed
-            const fromState = this.tubeStates[fromIdx];
-            if (fromTube.length > 0 && fromTube.length - 1 <= fromState.hiddenUntil) {
-                fromState.hiddenUntil = fromTube.length - 2;
-            }
-        }
-
-        // Mechanic: Locked Unlock Progress (Keeping this as it doesn't break levels)
-        this.tubeStates.forEach((state, i) => {
-            if (state.locked && state.lockCount > 0) {
-                state.lockCount--;
-                if (state.lockCount === 0) state.locked = false;
-            }
-        });
-
         this.selectedTubeIndex = null;
 
-        // Render immediately, but block interaction during "animation" time
-        // Inject splash animation
-        this.createSplash(toIdx, fromColor);
-        
-        // Add slosh effect
-        const containers = this.boardElement.children;
-        containers[fromIdx].classList.add('slosh');
-        containers[toIdx].classList.add('slosh');
-        
-        this.renderBoard(null, toIdx);
+        // Keep the puzzle state visible until the stream reaches its target. This is
+        // deliberately a DOM-only animation so the puzzle rules remain unchanged.
+        const animationDuration = this.animatePour(fromIdx, toIdx, fromColor);
+        this.reactMascot('happy');
 
         setTimeout(() => {
-            containers[fromIdx]?.classList.remove('slosh');
-            containers[toIdx]?.classList.remove('slosh');
+            // Save history and commit the same move that was validated above.
+            this.moveHistory.push({ from: fromIdx, to: toIdx, amount: actualMoveAmount, color: fromColor });
+
+            for (let i = 0; i < actualMoveAmount; i++) {
+                toTube.push(fromTube.pop());
+
+                const fromState = this.tubeStates[fromIdx];
+                if (fromTube.length > 0 && fromTube.length - 1 <= fromState.hiddenUntil) {
+                    fromState.hiddenUntil = fromTube.length - 2;
+                }
+            }
+
+            this.tubeStates.forEach((state) => {
+                if (state.locked && state.lockCount > 0) {
+                    state.lockCount--;
+                    if (state.lockCount === 0) state.locked = false;
+                }
+            });
+
+            this.renderBoard(null, toIdx);
+            this.createSplash(toIdx, fromColor);
+
+            const completedBottles = this.tubes
+                .map((tube, index) => this.isCompletedBottle(tube) ? index : -1)
+                .filter(index => index !== -1);
+            this.celebrateCompletedBottles(completedBottles);
+        }, Math.round(animationDuration * 0.56));
+
+        setTimeout(() => {
             this.isAnimating = false;
             this.checkWin();
-        }, 300); // 300ms matches CSS transition
+        }, animationDuration);
+    }
+
+    animatePour(fromIdx, toIdx, color) {
+        const containers = this.boardElement.children;
+        const source = containers[fromIdx];
+        const destination = containers[toIdx];
+        const sourceTube = source?.querySelector('.tube');
+        const destinationTube = destination?.querySelector('.tube');
+
+        if (!source || !destination || !sourceTube || !destinationTube) return 260;
+
+        const sourceRect = sourceTube.getBoundingClientRect();
+        const destinationRect = destinationTube.getBoundingClientRect();
+        const poursRight = destinationRect.left > sourceRect.left;
+        const startX = sourceRect.left + sourceRect.width * (poursRight ? 0.78 : 0.22);
+        const startY = sourceRect.top - 15;
+        const endX = destinationRect.left + destinationRect.width * 0.5;
+        const endY = destinationRect.top - 13;
+        const distance = Math.hypot(endX - startX, endY - startY);
+        const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
+
+        const pourClass = poursRight ? 'pouring-right' : 'pouring-left';
+        source.classList.add(pourClass); // Lifts and tilts
+
+        const duration = Math.max(600, Math.min(800, 500 + distance * 0.35));
+
+        // Delay stream and wave until bottle is tilted
+        setTimeout(() => {
+            destination.classList.add('receiving-pour');
+            
+            const stream = document.createElement('div');
+            stream.className = 'pour-stream';
+            stream.style.setProperty('--pour-color', COLOR_PALETTE[color]);
+            stream.style.setProperty('--pour-length', `${distance}px`);
+            stream.style.setProperty('--pour-angle', `${angle}deg`);
+            stream.style.left = `${startX}px`;
+            stream.style.top = `${startY}px`;
+            document.body.appendChild(stream);
+
+            setTimeout(() => {
+                stream.remove();
+            }, duration - 150);
+        }, 150);
+
+        setTimeout(() => {
+            source.classList.remove(pourClass);
+            destination.classList.remove('receiving-pour');
+        }, duration);
+
+        return duration;
+    }
+
+    isCompletedBottle(tube) {
+        return tube.length === TUBE_CAPACITY && tube.every(color => color === tube[0]);
+    }
+
+    celebrateCompletedBottles(indexes) {
+        const containers = this.boardElement.children;
+
+        indexes.forEach(index => {
+            const bottle = containers[index];
+            if (!bottle || bottle.classList.contains('completed-celebration')) return;
+
+            bottle.classList.add('completed-celebration');
+            for (let i = 0; i < 4; i++) {
+                const sparkle = document.createElement('span');
+                sparkle.className = 'bottle-sparkle';
+                const fruit = FRUIT_MAPPING[this.tubes[index][0]] || '✨';
+                sparkle.textContent = fruit;
+                sparkle.style.setProperty('--sparkle-x', `${(Math.random() - 0.5) * 60}px`);
+                sparkle.style.setProperty('--sparkle-y', `${-20 - Math.random() * 40}px`);
+                sparkle.style.animationDelay = `${i * 80}ms`;
+                bottle.appendChild(sparkle);
+                setTimeout(() => sparkle.remove(), 700);
+            }
+
+            setTimeout(() => bottle.classList.remove('completed-celebration'), 560);
+        });
+
+        if (indexes.length) this.reactMascot('celebrate');
+    }
+
+    reactMascot(reaction) {
+        if (!this.mascotGuide) return;
+
+        const reactionClasses = ['mascot-idle', 'mascot-ready', 'mascot-happy', 'mascot-confused', 'mascot-celebrate'];
+        this.mascotGuide.classList.remove(...reactionClasses);
+        this.mascotGuide.classList.add(`mascot-${reaction}`);
+
+        const speech = this.mascotGuide.querySelector('.mascot-speech');
+        const messages = {
+            idle: "Sort the juice!",
+            ready: 'Pick a match!',
+            happy: 'Nice pour!',
+            confused: 'Try another!',
+            celebrate: 'Juice complete!'
+        };
+        if (speech) speech.textContent = messages[reaction] || messages.idle;
+
+        if (reaction !== 'idle') {
+            setTimeout(() => {
+                if (!this.mascotGuide) return;
+                this.mascotGuide.classList.remove(...reactionClasses);
+                this.mascotGuide.classList.add('mascot-idle');
+                if (speech) speech.textContent = messages.idle;
+            }, reaction === 'celebrate' ? 760 : 520);
+        }
     }
 
 
@@ -955,14 +1132,12 @@ class Game {
 
                     // Valid hint found
                     const containers = this.boardElement.children;
-                    containers[i].classList.add('hint-highlight');
-                    containers[j].classList.add('hint-highlight');
-                    foundHint = true;
                     this.selectedTubeIndex = null;
-                    this.renderBoard(); // reset selection but keep hint classes via script
+                    foundHint = true;
+                    this.renderBoard(); // reset selection
 
-                    // Re-apply classes because renderBoard sometimes overwrites
-                    setTimeout(() => {
+                    // Apply classes after a short delay to ensure renderBoard doesn't interfere
+                    this.hintTimeout = setTimeout(() => {
                         containers[i].classList.add('hint-highlight');
                         containers[j].classList.add('hint-highlight');
                     }, 50);
@@ -979,10 +1154,53 @@ class Game {
     }
 
     clearHints() {
+        if (this.hintTimeout) {
+            clearTimeout(this.hintTimeout);
+            this.hintTimeout = null;
+        }
         const containers = this.boardElement.children;
         for (let i = 0; i < containers.length; i++) {
             containers[i].classList.remove('hint-highlight');
         }
+    }
+
+    updateTutorial() {
+        if (!this.tutorialTip) return;
+        if (this.tutorialCompleted || this.level !== 1 || this.tutorialStep === 0) {
+            this.tutorialTip.classList.add('hidden');
+            return;
+        }
+
+        const textEl = document.getElementById('tutorialText');
+        this.tutorialTip.classList.remove('hidden');
+
+        // Give DOM time to create children if needed
+        setTimeout(() => {
+            const containers = this.boardElement.children;
+            if (!containers || containers.length === 0) return;
+
+            this.tutorialTip.style.position = 'absolute';
+            this.tutorialTip.style.top = '-40px';
+            this.tutorialTip.style.left = '50%';
+            this.tutorialTip.style.transform = 'translateX(-50%)';
+
+            if (this.tutorialStep === 1) {
+                if (textEl) textEl.textContent = 'Tap me!';
+                containers[0].appendChild(this.tutorialTip);
+            } else if (this.tutorialStep === 2) {
+                if (textEl) textEl.textContent = 'Now pour!';
+                containers[containers.length - 1].appendChild(this.tutorialTip);
+            } else if (this.tutorialStep === 3) {
+                if (textEl) textEl.textContent = 'Great! 🍓';
+                // Find where the player just poured by checking selectedTubeIndex?
+                // The tip is currently on the destination container because we appended it there in step 2.
+                setTimeout(() => {
+                    this.tutorialCompleted = true;
+                    localStorage.setItem('colorSortTutorial', 'true');
+                    this.tutorialTip.classList.add('hidden');
+                }, 2000);
+            }
+        }, 50);
     }
 
     checkWin() {
@@ -999,6 +1217,7 @@ class Game {
             this.isAnimating = true; // Prevent clicks
             this.playSound('win');
             this.vibrate('win');
+            this.reactMascot('celebrate');
             
             // Earn Diamonds
             const reward = this.isDailyChallenge ? 200 : (50 + Math.floor(this.level / 5) * 10);
@@ -1023,7 +1242,7 @@ class Game {
         if (!container) return;
 
         container.innerHTML = '';
-        const colors = ['#d4af37', '#b510d4', '#00f0ff', '#39ff14', '#ff3366'];
+        const colors = ['#FF6B9D', '#7C4DFF', '#4ECDC4', '#FFD93D', '#FF9F43', '#FF4757'];
         
         for (let i = 0; i < 25; i++) { // Reduced from 50
             const confetti = document.createElement('div');
