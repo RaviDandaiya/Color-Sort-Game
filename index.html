@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Color Splash Sort</title>
+    <title>Fruit Sort</title>
     <link rel="stylesheet" href="src/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -12,14 +12,14 @@
 <body>
     <div id="splashScreen" class="splash-screen">
         <div class="splash-content">
-            <div class="splash-logo">🌈</div>
-            <h1 class="splash-title">Color Splash</h1>
-            <p class="splash-subtitle">Sort the colors!</p>
+            <div class="splash-logo">🍓</div>
+            <h1 class="splash-title">Fruit Sort</h1>
+            <p class="splash-subtitle">Sort the fruit!</p>
             <div class="loading-container">
                 <div class="loading-bar">
                     <div id="loadingProgress" class="loading-progress"></div>
                 </div>
-            <p class="loading-text">Mixing up the magic...</p>
+            <p class="loading-text">Picking the fruit...</p>
             </div>
         </div>
     </div>
@@ -38,6 +38,9 @@
         <span class="magic-dot dot-one">✦</span>
         <span class="magic-dot dot-two">✦</span>
         <span class="magic-dot dot-three">●</span>
+        <span class="bg-bubble bubble-1"></span>
+        <span class="bg-bubble bubble-2"></span>
+        <span class="bg-bubble bubble-3"></span>
     </div>
 
     <div class="app-container">
@@ -45,9 +48,11 @@
             <div class="top-bar">
                 <div class="level-info">
                     <h1>Level <span id="levelDisplay">1</span></h1>
+                    <div id="worldDisplay" class="world-display">Berry Garden 🍓</div>
                 </div>
                 
                 <div class="top-right-actions">
+                    <button class="btn btn-secondary icon-btn" onclick="game.toggleProgressModal()" title="My Progress">🗺️</button>
                     <button class="btn btn-daily" id="dailyBtn" onclick="game.startDailyChallenge()">
                         📅
                     </button>
@@ -65,12 +70,9 @@
 
         <section class="play-stage" aria-label="Color sorting puzzle">
             <div id="mascotGuide" class="mascot-guide mascot-idle" aria-live="polite">
-                <div class="mascot-speech">Let's sort!</div>
+                <div class="mascot-speech">Sort the fruit!</div>
                 <div class="bunny-mascot" aria-hidden="true">
-                    <span class="bunny-ear ear-left"></span>
-                    <span class="bunny-ear ear-right"></span>
-                    <span class="bunny-face"><i class="bunny-eye eye-left"></i><i class="bunny-eye eye-right"></i><i class="bunny-nose"></i><i class="bunny-cheek cheek-left"></i><i class="bunny-cheek cheek-right"></i></span>
-                    <span class="bunny-paw">✦</span>
+                    <img src="assets/images/bunny_mascot.jpg" alt="Bunny mascot" width="56" height="56">
                 </div>
             </div>
             <main id="gameBoard" class="game-board">
@@ -80,16 +82,14 @@
         </section>
 
         <footer class="game-footer">
-            <div class="primary-controls">
-                <button class="btn btn-action" onclick="game.undoMove()">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"/></svg>
+            <div class="footer-controls">
+                <button class="btn btn-action btn-primary-action" onclick="game.undoMove()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"/></svg>
                     <span>Undo</span>
                 </button>
-                <button class="btn btn-action" onclick="game.showHint()">
+                <button class="btn btn-action btn-primary-action" onclick="game.showHint()">
                     <span>💡 Hint</span> <span class="badge">100 💎</span>
                 </button>
-            </div>
-            <div class="secondary-controls">
                 <button class="btn btn-secondary-action" onclick="game.addExtraTube()">
                     <span>+ Bottle</span> <span class="badge">300 💎</span>
                 </button>
@@ -104,16 +104,54 @@
         <div id="winModal" class="modal hidden">
             <div id="celebrationContainer" class="celebration-container"></div>
             <div class="modal-content glass win-content">
-                <div class="mascot-container">
-                    <img src="/assets/images/mascot_win.png" alt="Celebration Alchemist" class="win-mascot">
+                <div class="win-mascot-container">
+                    <img src="assets/images/bunny_mascot.jpg" alt="Bunny mascot" class="win-mascot">
                 </div>
-                <h2>Amazing! 🎉</h2>
-                <p>You sorted every color perfectly! 🌈</p>
-                <div class="reward-display">
-                    +<span id="essenceReward">50</span> 💎 Diamonds
+                <h2 class="win-title">Fruit-tastic! 🍓</h2>
+                <p class="win-message">You sorted all the fruit!</p>
+                
+                <div id="completedFruitsContainer" class="completed-fruits-row"></div>
+                
+                <div class="stars-container">
+                    <span class="star-item">⭐</span>
+                    <span class="star-item">⭐</span>
+                    <span class="star-item">⭐</span>
+                    <div class="star-label">Perfect!</div>
                 </div>
-                <div class="stars">✨✨✨</div>
-                <button class="btn btn-primary btn-large" onclick="game.nextLevel()">Next Level</button>
+                
+                <div class="win-reward-card">
+                    <span class="reward-icon">🎁</span>
+                    <span class="reward-text">Level Reward</span>
+                    <div class="reward-amount">+<span id="essenceReward">50</span> 💎</div>
+                </div>
+                
+                <div class="win-progress-section">
+                    <div id="winProgressText" class="win-progress-text">Next Unlock: Orange at Level 4</div>
+                    <div class="win-progress-bar-bg">
+                        <div id="winProgressBarFill" class="win-progress-bar-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary btn-large win-next-btn" onclick="game.nextLevel()">Next Level →</button>
+            </div>
+        </div>
+
+        <div id="progressModal" class="modal hidden">
+            <div class="modal-content glass progress-content">
+                <div class="modal-header">
+                    <h2>🗺️ My Journey</h2>
+                    <button class="close-btn" onclick="game.toggleProgressModal()">✕</button>
+                </div>
+                
+                <div class="progress-tabs">
+                    <button id="tabMapBtn" class="tab-btn active" onclick="game.switchProgressTab('map')">Map</button>
+                    <button id="tabFruitsBtn" class="tab-btn" onclick="game.switchProgressTab('fruits')">Collection</button>
+                    <button id="tabMilestonesBtn" class="tab-btn" onclick="game.switchProgressTab('milestones')">Achievements</button>
+                </div>
+                
+                <div id="progressTabContent" class="progress-tab-content">
+                    <!-- Progress tabs content injected here -->
+                </div>
             </div>
         </div>
 

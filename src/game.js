@@ -129,11 +129,40 @@ class Game {
         this.tutorialCompleted = localStorage.getItem('colorSortTutorial') === 'true';
         this.tutorialStep = 0;
 
+        this.hintsUsedThisLevel = 0;
+        this.progressTab = 'map';
+        this.progressModal = document.getElementById('progressModal');
+        this.progressTabContent = document.getElementById('progressTabContent');
+
         this.initPlayer();
         this.initMeta();
+
+        // Check if the saved state was a Daily Challenge
+        const savedStateStr = localStorage.getItem('colorSortActiveGameState');
+        if (savedStateStr) {
+            try {
+                const savedState = JSON.parse(savedStateStr);
+                if (savedState.isDailyChallenge) {
+                    this.isDailyChallenge = true;
+                    // Switch the header button label
+                    const dailyBtn = document.getElementById('dailyBtn');
+                    if (dailyBtn) {
+                        dailyBtn.innerHTML = '🏠 Main Level';
+                        dailyBtn.onclick = () => this.exitDaily();
+                        dailyBtn.classList.add('btn-back');
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to parse saved active state in constructor:", e);
+            }
+        }
+
         this.initLevel();
         this.initParticles();
         this.handleSplash();
+
+        // Recalculate board layout on resize/orientation change
+        window.addEventListener('resize', () => this.updateBoardLayout());
     }
 
     initParticles() {
@@ -437,16 +466,104 @@ class Game {
         }
     }
 
+    getUnlockedFruitsForLevel(level) {
+        const list = ['red', 'blue', 'green']; // Strawberry, Blueberry, Apple
+        if (level >= 4) list.push('orange');
+        if (level >= 7) list.push('yellow');
+        if (level >= 11) list.push('purple');
+        if (level >= 16) list.push('pink');
+        if (level >= 22) list.push('cyan');
+        return list;
+    }
+
+    getDateSeed() {
+        const today = new Date();
+        return today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+    }
+
+    createSeededRandom(seed) {
+        return function() {
+            let t = seed += 0x6D2B79F5;
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        }
+    }
+
+    getTargetMovesForLevel(level) {
+        const effectiveLevel = this.isDailyChallenge ? 25 : level;
+        if (effectiveLevel <= 3) return 10;
+        if (effectiveLevel <= 10) return 18;
+        if (effectiveLevel <= 30) return 26;
+        return 35;
+    }
+
+    getWorldNameForLevel(level) {
+        if (this.isDailyChallenge) {
+            const streak = localStorage.getItem('colorSortDailyStreak') || '0';
+            return `Daily Challenge 📅 (Streak: 🔥 ${streak})`;
+        }
+        if (level <= 5) return "Berry Garden 🍓";
+        if (level <= 15) return "Fruit Orchard 🍊";
+        return "Tropical Garden 🍉";
+    }
+
     initLevel() {
         const effectiveLevel = this.isDailyChallenge ? Math.max(this.level + 10, 100) : this.level;
         const displayLevel = this.isDailyChallenge ? "Daily" : this.level;
 
+        // Check if there is a saved active state matching the current level/mode
+        const savedStateStr = localStorage.getItem('colorSortActiveGameState');
+        if (savedStateStr) {
+            try {
+                const savedState = JSON.parse(savedStateStr);
+                if (savedState.level === this.level && savedState.isDailyChallenge === this.isDailyChallenge) {
+                    this.tubes = savedState.tubes;
+                    this.tubeStates = savedState.tubeStates;
+                    this.moveHistory = savedState.moveHistory;
+                    this.hintsUsedThisLevel = savedState.hintsUsedThisLevel || 0;
+                    this.selectedTubeIndex = null;
+                    this.isAnimating = false;
+                    
+                    if (this.levelDisplay) this.levelDisplay.textContent = displayLevel;
+                    const worldEl = document.getElementById('worldDisplay');
+                    if (worldEl) worldEl.textContent = this.getWorldNameForLevel(this.level);
+                    this.winModal.classList.add('hidden');
+                    
+                    // Apply visual theme
+                    const theme = THEMES.find(t => effectiveLevel >= t.range[0] && effectiveLevel <= t.range[1]) || THEMES[THEMES.length - 1];
+                    document.documentElement.style.setProperty('--bg-color', theme.bgColor);
+                    document.documentElement.style.setProperty('--bg-gradient-1', theme.bgGradient1);
+                    document.documentElement.style.setProperty('--bg-gradient-2', theme.bgGradient2);
+                    document.documentElement.style.setProperty('--tube-border-color', theme.tubeBorder);
+                    document.documentElement.style.setProperty('--tube-base-gradient', theme.tubeBase);
+                    document.documentElement.style.setProperty('--tube-shadow', theme.tubeShadow);
+                    document.documentElement.style.setProperty('--tube-radius', theme.tubeRadius);
+                    document.documentElement.style.setProperty('--particle-icon', theme.particle);
+                    document.documentElement.style.setProperty('--bg-pattern', theme.bgPattern);
+                    document.documentElement.style.setProperty('--splash-radius', theme.splashRadius);
+                    this.applyLabBackground();
+                    this.renderBoard();
+                    return; // Skip generation!
+                }
+            } catch (e) {
+                console.error("Failed to restore active state", e);
+            }
+        }
+
         this.selectedTubeIndex = null;
         this.moveHistory = [];
         this.isAnimating = false;
+        this.hintsUsedThisLevel = 0; // Reset hints count
         
         if (this.levelDisplay) {
             this.levelDisplay.textContent = displayLevel;
+        }
+        
+        // Update World display in main header
+        const worldEl = document.getElementById('worldDisplay');
+        if (worldEl) {
+            worldEl.textContent = this.getWorldNameForLevel(this.level);
         }
         
         this.winModal.classList.add('hidden');
@@ -518,6 +635,7 @@ class Game {
         // Apply mechanics based on theme/level
         this.applyMechanics(theme.id);
         this.renderBoard();
+        this.saveActiveState();
     }
 
     applyMechanics(themeId) {
@@ -579,13 +697,74 @@ class Game {
         }
     }
 
-    generateTubes(numColors, totalTubes) {
-        // Ensure numColors doesn't exceed available palette
-        const maxColors = Object.keys(COLOR_PALETTE).length;
-        const actualColors = Math.min(numColors, maxColors);
-        const colorKeys = Object.keys(COLOR_PALETTE).slice(0, actualColors);
+    isSolvable(initialTubes) {
+        // Simple BFS solver
+        const serialize = (state) => state.map(t => t.join(',')).join('|');
+        const queue = [initialTubes.map(t => [...t])];
+        const visited = new Set([serialize(initialTubes)]);
+        
+        let iterations = 0;
+        const maxIterations = 800;
 
-        // 1. Create a flat array of all water segments needed
+        while (queue.length > 0) {
+            const curr = queue.shift();
+            iterations++;
+            if (iterations > maxIterations) {
+                return true; 
+            }
+
+            const won = curr.every(tube => {
+                if (tube.length === 0) return true;
+                if (tube.length !== TUBE_CAPACITY) return false;
+                return tube.every(c => c === tube[0]);
+            });
+            if (won) return true;
+
+            for (let i = 0; i < curr.length; i++) {
+                for (let j = 0; j < curr.length; j++) {
+                    if (i === j) continue;
+                    if (this.canPourTubes(curr, i, j)) {
+                        const nextState = curr.map(t => [...t]);
+                        const fromTube = nextState[i];
+                        const toTube = nextState[j];
+                        const color = fromTube[fromTube.length - 1];
+                        
+                        let amount = 0;
+                        for (let k = fromTube.length - 1; k >= 0; k--) {
+                            if (fromTube[k] === color) amount++;
+                            else break;
+                        }
+                        const actualAmount = Math.min(amount, TUBE_CAPACITY - toTube.length);
+                        for (let k = 0; k < actualAmount; k++) {
+                            toTube.push(fromTube.pop());
+                        }
+
+                        const key = serialize(nextState);
+                        if (!visited.has(key)) {
+                            visited.add(key);
+                            queue.push(nextState);
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    canPourTubes(tubesList, fromIdx, toIdx) {
+        const fromTube = tubesList[fromIdx];
+        const toTube = tubesList[toIdx];
+        if (fromTube.length === 0) return false;
+        if (toTube.length >= TUBE_CAPACITY) return false;
+        if (toTube.length === 0) return true;
+        return fromTube[fromTube.length - 1] === toTube[toTube.length - 1];
+    }
+
+    generateTubes(numColors, totalTubes) {
+        const availableColors = this.getUnlockedFruitsForLevel(this.level);
+        const actualColors = Math.min(numColors, availableColors.length);
+        const colorKeys = availableColors.slice(0, actualColors);
+
         const pool = [];
         for (let i = 0; i < actualColors; i++) {
             for (let j = 0; j < TUBE_CAPACITY; j++) {
@@ -593,23 +772,41 @@ class Game {
             }
         }
 
-        // 2. Shuffle the pool randomly
-        for (let i = pool.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [pool[i], pool[j]] = [pool[j], pool[i]];
+        // Determine random function (seeded for determinism and replayability)
+        let randomFn;
+        if (this.isDailyChallenge) {
+            const seed = this.getDateSeed();
+            randomFn = this.createSeededRandom(seed);
+        } else {
+            const seed = this.level * 1000 + 12345;
+            randomFn = this.createSeededRandom(seed);
         }
 
-        // 3. Fill tubes, leaving (totalTubes - actualColors) tubes completely empty
-        this.tubes = [];
-        for (let i = 0; i < totalTubes; i++) {
-            const tube = [];
-            if (i < actualColors) {
-                for (let j = 0; j < TUBE_CAPACITY; j++) {
-                    tube.push(pool.pop());
-                }
+        let attempts = 0;
+        do {
+            // Shuffle
+            const tempPool = [...pool];
+            for (let i = tempPool.length - 1; i > 0; i--) {
+                const j = Math.floor(randomFn() * (i + 1));
+                [tempPool[i], tempPool[j]] = [tempPool[j], tempPool[i]];
             }
-            this.tubes.push(tube);
-        }
+
+            // Fill tubes
+            this.tubes = [];
+            for (let i = 0; i < totalTubes; i++) {
+                const tube = [];
+                if (i < actualColors) {
+                    for (let j = 0; j < TUBE_CAPACITY; j++) {
+                        tube.push(tempPool.pop());
+                    }
+                }
+                this.tubes.push(tube);
+            }
+            attempts++;
+            if (this.isSolvable(this.tubes)) {
+                break;
+            }
+        } while (attempts < 20);
     }
 
     renderBoard(newTubeIndex = null, mergeGlowTubeIndex = null) {
@@ -625,56 +822,38 @@ class Game {
                 const tubeDiv = document.createElement('div');
                 tubeDiv.className = 'tube';
 
-                // Decorative bottle details only; water and puzzle state remain in
-                // the existing `.water` element below.
                 const bottleNeck = document.createElement('div');
                 bottleNeck.className = 'bottle-neck';
                 const bottleRim = document.createElement('div');
                 bottleRim.className = 'bottle-rim';
-                const bottleLabel = document.createElement('div');
-                bottleLabel.className = 'bottle-label';
                 
-                const waterDiv = document.createElement('div');
-                waterDiv.className = 'water';
+                const fruitStack = document.createElement('div');
+                fruitStack.className = 'fruit-stack';
                 
-                // Pre-fill segments to keep DOM stable
+                // Pre-fill fruit piece slots
                 for (let j = 0; j < TUBE_CAPACITY; j++) {
-                    const segment = document.createElement('div');
-                    segment.className = 'water-segment';
-                    segment.style.display = 'none';
-                    waterDiv.appendChild(segment);
+                    const piece = document.createElement('div');
+                    piece.className = 'fruit-piece';
+                    piece.style.display = 'none';
+                    fruitStack.appendChild(piece);
                 }
                 
                 tubeDiv.appendChild(bottleNeck);
                 tubeDiv.appendChild(bottleRim);
-                tubeDiv.appendChild(bottleLabel);
-                tubeDiv.appendChild(waterDiv);
+                tubeDiv.appendChild(fruitStack);
                 tubeContainer.appendChild(tubeDiv);
                 this.boardElement.appendChild(tubeContainer);
             });
+            this.updateBoardLayout();
         }
 
         const containers = this.boardElement.children;
-            // Find skin preview from shopData if it exists
-            let skinUrl = null;
-            if (this.activeSkin !== 'skin-default' && this.shopData) {
-                const skinItem = this.shopData.find(it => it.id === this.activeSkin);
-                if (skinItem) skinUrl = skinItem.preview;
-            } else if (this.activeSkin !== 'skin-default') {
-                // Fallback for when shopData isn't rendered yet but skin is active
-                const fallbackSkins = {
-                    'skin-galaxy': '/assets/images/galaxy_glow_texture_1777181001273.png',
-                    'skin-gold': '/assets/images/molten_gold_texture_1777181017498.png',
-                    'skin-rainbow': '/assets/images/rainbow_pulse_texture_1777181035863.png'
-                };
-                skinUrl = fallbackSkins[this.activeSkin];
-            }
 
         this.tubes.forEach((tube, index) => {
             const tubeContainer = containers[index];
             const state = this.tubeStates[index];
 
-            // Update tube container classes without full overwrite if possible
+            // Update tube container classes
             const isSelected = this.selectedTubeIndex === index;
             tubeContainer.classList.toggle('selected', isSelected);
             tubeContainer.classList.toggle(
@@ -687,70 +866,80 @@ class Game {
             const isStorm = state.moving || state.volatile;
             tubeContainer.classList.toggle('storm', isStorm);
             tubeContainer.classList.toggle('volatile', !!state.volatile);
+            tubeContainer.classList.toggle('is-empty', tube.length === 0);
 
-            const labelDiv = tubeContainer.querySelector('.bottle-label');
-            if (labelDiv) {
-                if (tube.length > 0) {
-                    const bottomColor = tube[0];
-                    const fruit = FRUIT_MAPPING[bottomColor] || '';
-                    if (labelDiv.textContent !== fruit) labelDiv.textContent = fruit;
-                    labelDiv.style.opacity = '1';
-                } else {
-                    labelDiv.style.opacity = '0';
-                }
-            }
-
-            const waterDiv = tubeContainer.querySelector('.water');
-            const targetHeight = `${(tube.length / TUBE_CAPACITY) * 100}%`;
-            
-            if (waterDiv.style.height !== targetHeight) {
-                waterDiv.style.height = targetHeight;
-            }
-
-            const currentSegments = waterDiv.children;
+            const fruitStack = tubeContainer.querySelector('.fruit-stack');
+            const pieces = fruitStack.children;
 
             for (let i = 0; i < TUBE_CAPACITY; i++) {
-                const segment = currentSegments[i];
+                const piece = pieces[i];
                 if (i < tube.length) {
-                    segment.style.display = 'block';
                     const segmentIndex = tube.length - 1 - i;
                     const color = tube[segmentIndex];
-                    const colorValue = COLOR_PALETTE[color];
+                    const fruit = FRUIT_MAPPING[color] || '●';
 
-                    if (segment.style.backgroundColor !== colorValue) {
-                        segment.style.backgroundColor = colorValue;
-                    }
+                    piece.style.display = 'flex';
+                    piece.style.height = '25%';
+                    piece.style.backgroundColor = '';
 
-                    const segmentHeight = `${100 / tube.length}%`;
-                    if (segment.style.height !== segmentHeight) {
-                        segment.style.height = segmentHeight;
-                    }
+                    // States
+                    const isFrozen = state.frozen && segmentIndex === tube.length - 1;
+                    const isHidden = segmentIndex <= state.hiddenUntil;
+                    const isMergeGlow = index === mergeGlowTubeIndex && segmentIndex === tube.length - 1;
 
-                // States
-                const isFrozen = state.frozen && segmentIndex === tube.length - 1;
-                const isHidden = segmentIndex <= state.hiddenUntil;
-                const isMergeGlow = index === mergeGlowTubeIndex && segmentIndex === tube.length - 1;
+                    piece.classList.toggle('frozen-layer', isFrozen);
+                    piece.classList.toggle('hidden-layer', isHidden);
+                    piece.classList.toggle('merge-glow', isMergeGlow);
 
-                    segment.classList.toggle('frozen-layer', isFrozen);
-                    segment.classList.toggle('hidden-layer', isHidden);
-                    segment.classList.toggle('merge-glow', isMergeGlow);
-                } else {
-                    segment.style.display = 'none';
-                }
-
-                // Skin
-                if (skinUrl) {
-                    const bgImg = `url("${skinUrl}")`;
-                    if (segment.style.backgroundImage !== bgImg) {
-                        segment.style.backgroundImage = bgImg;
-                        segment.style.backgroundSize = 'cover';
-                        segment.style.backgroundBlendMode = 'overlay';
+                    if (isHidden) {
+                        piece.textContent = '?';
+                    } else {
+                        piece.textContent = fruit;
                     }
                 } else {
-                    segment.style.backgroundImage = '';
+                    piece.style.display = 'none';
+                    piece.style.backgroundColor = '';
+                    piece.textContent = '';
+                    piece.classList.remove('frozen-layer', 'hidden-layer', 'merge-glow');
                 }
             }
         });
+    }
+
+    updateBoardLayout() {
+        const count = this.tubes.length;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const maxWidth = Math.min(vw, 500);
+
+        // Determine optimal columns
+        let cols;
+        if (count <= 5) cols = count;
+        else if (count <= 8) cols = Math.min(count, Math.ceil(count / 2) + (count % 2 === 0 ? 0 : 0));
+        else cols = Math.min(count, 5);
+
+        // Adjust for very small widths
+        if (count <= 5) cols = count;
+        else if (count <= 10) cols = Math.min(5, Math.ceil(count / 2));
+        else cols = Math.min(6, Math.ceil(count / 2));
+
+        const rows = Math.ceil(count / cols);
+
+        // Calculate bottle dimensions to fit
+        const hGap = 8;
+        const vGap = 12;
+        const padH = 20;
+        const availableW = maxWidth - padH * 2;
+        const availableH = vh * 0.52; // reserve space for header, mascot, controls
+
+        const bottleW = Math.min(66, Math.max(40, Math.floor((availableW - (cols - 1) * hGap) / cols)));
+        const maxProportionalH = Math.floor(bottleW * 2.7);
+        const bottleH = Math.min(180, Math.max(100, Math.min(maxProportionalH, Math.floor((availableH - (rows - 1) * vGap - 30 * rows) / rows))));
+
+        this.boardElement.style.setProperty('--bottle-w', `${bottleW}px`);
+        this.boardElement.style.setProperty('--bottle-h', `${bottleH}px`);
+        this.boardElement.style.setProperty('--board-gap', `${hGap}px`);
+        this.boardElement.style.setProperty('--board-cols', `${cols}`);
     }
 
     getSkinUrl(skinId) {
@@ -880,7 +1069,6 @@ class Game {
 
         // Find how many blocks of the same color we can move
         const fromColor = fromTube[fromTube.length - 1];
-        const toColor = toTube.length > 0 ? toTube[toTube.length - 1] : null;
         
         let amountToMove = 0;
         for (let i = fromTube.length - 1; i >= 0; i--) {
@@ -893,94 +1081,146 @@ class Game {
 
         this.selectedTubeIndex = null;
 
-        // Keep the puzzle state visible until the stream reaches its target. This is
-        // deliberately a DOM-only animation so the puzzle rules remain unchanged.
-        const animationDuration = this.animatePour(fromIdx, toIdx, fromColor);
+        // === IMMEDIATE STATE MUTATION (fixes stale-destination bug) ===
+        this.moveHistory.push({ from: fromIdx, to: toIdx, amount: actualMoveAmount, color: fromColor });
+
+        for (let i = 0; i < actualMoveAmount; i++) {
+            toTube.push(fromTube.pop());
+
+            const fromState = this.tubeStates[fromIdx];
+            if (fromTube.length > 0 && fromTube.length - 1 <= fromState.hiddenUntil) {
+                fromState.hiddenUntil = fromTube.length - 2;
+            }
+        }
+
+        this.tubeStates.forEach((state) => {
+            if (state.locked && state.lockCount > 0) {
+                state.lockCount--;
+                if (state.lockCount === 0) state.locked = false;
+            }
+        });
+
+        // Persist level state mid-level
+        this.saveActiveState();
+
+        // Render immediately — source and destination update NOW
+        this.renderBoard(null, toIdx);
+
+        // Start visual overlay animation (purely cosmetic)
+        const animationDuration = this.animatePour(fromIdx, toIdx, fromColor, actualMoveAmount);
         this.reactMascot('happy');
 
+        // After animation completes: splash, celebrate, check win
         setTimeout(() => {
-            // Save history and commit the same move that was validated above.
-            this.moveHistory.push({ from: fromIdx, to: toIdx, amount: actualMoveAmount, color: fromColor });
-
-            for (let i = 0; i < actualMoveAmount; i++) {
-                toTube.push(fromTube.pop());
-
-                const fromState = this.tubeStates[fromIdx];
-                if (fromTube.length > 0 && fromTube.length - 1 <= fromState.hiddenUntil) {
-                    fromState.hiddenUntil = fromTube.length - 2;
-                }
-            }
-
-            this.tubeStates.forEach((state) => {
-                if (state.locked && state.lockCount > 0) {
-                    state.lockCount--;
-                    if (state.lockCount === 0) state.locked = false;
-                }
-            });
-
-            this.renderBoard(null, toIdx);
             this.createSplash(toIdx, fromColor);
 
             const completedBottles = this.tubes
                 .map((tube, index) => this.isCompletedBottle(tube) ? index : -1)
                 .filter(index => index !== -1);
             this.celebrateCompletedBottles(completedBottles);
-        }, Math.round(animationDuration * 0.56));
 
-        setTimeout(() => {
             this.isAnimating = false;
             this.checkWin();
         }, animationDuration);
     }
 
-    animatePour(fromIdx, toIdx, color) {
+    animatePour(fromIdx, toIdx, color, amount) {
         const containers = this.boardElement.children;
         const source = containers[fromIdx];
         const destination = containers[toIdx];
         const sourceTube = source?.querySelector('.tube');
         const destinationTube = destination?.querySelector('.tube');
 
-        if (!source || !destination || !sourceTube || !destinationTube) return 260;
+        if (!source || !destination || !sourceTube || !destinationTube) return 300;
 
         const sourceRect = sourceTube.getBoundingClientRect();
         const destinationRect = destinationTube.getBoundingClientRect();
         const poursRight = destinationRect.left > sourceRect.left;
-        const startX = sourceRect.left + sourceRect.width * (poursRight ? 0.78 : 0.22);
-        const startY = sourceRect.top - 15;
-        const endX = destinationRect.left + destinationRect.width * 0.5;
-        const endY = destinationRect.top - 13;
-        const distance = Math.hypot(endX - startX, endY - startY);
-        const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
+
+        // Calculate direct translation so the source bottle moves to sit right over destination neck
+        const dx = destinationRect.left - sourceRect.left;
+        const dy = destinationRect.top - sourceRect.top;
+        const tx = dx + (poursRight ? -36 : 36);
+        const ty = dy - 60;
+
+        sourceTube.style.setProperty('--pour-tx', `${tx}px`);
+        sourceTube.style.setProperty('--pour-ty', `${ty}px`);
 
         const pourClass = poursRight ? 'pouring-right' : 'pouring-left';
-        source.classList.add(pourClass); // Lifts and tilts
+        source.classList.add(pourClass);
 
-        const duration = Math.max(600, Math.min(800, 500 + distance * 0.35));
+        const fruit = FRUIT_MAPPING[color] || '●';
+        const flyDuration = 320;
+        const stagger = 80;
+        const liftDelay = 220; // Allow bottle to lift and glide slightly before fruit flies
+        const settleDelay = 120; // After last fruit lands
+        const totalDuration = liftDelay + flyDuration + (amount - 1) * stagger + settleDelay;
 
-        // Delay stream and wave until bottle is tilted
+        // After the bottle tilts, launch the flying fruits
         setTimeout(() => {
-            destination.classList.add('receiving-pour');
-            
-            const stream = document.createElement('div');
-            stream.className = 'pour-stream';
-            stream.style.setProperty('--pour-color', COLOR_PALETTE[color]);
-            stream.style.setProperty('--pour-length', `${distance}px`);
-            stream.style.setProperty('--pour-angle', `${angle}deg`);
-            stream.style.left = `${startX}px`;
-            stream.style.top = `${startY}px`;
-            document.body.appendChild(stream);
+            // Recalculate start position at the mouth of the tilted bottle
+            const srcRect = sourceTube.getBoundingClientRect();
+            const dstRect = destinationTube.getBoundingClientRect();
+            const startX = srcRect.left + srcRect.width * (poursRight ? 0.75 : 0.25);
+            const startY = srcRect.top + 5;
+            const endX = dstRect.left + dstRect.width * 0.5;
+            const endY = dstRect.top + 10;
 
-            setTimeout(() => {
-                stream.remove();
-            }, duration - 150);
-        }, 150);
+            destination.classList.add('receiving-pour');
+
+            for (let i = 0; i < amount; i++) {
+                setTimeout(() => {
+                    const flyEl = document.createElement('div');
+                    flyEl.className = 'fruit-fly';
+                    flyEl.textContent = fruit;
+                    flyEl.style.left = `${startX}px`;
+                    flyEl.style.top = `${startY}px`;
+
+                    const fdx = endX - startX;
+                    const fdy = endY - startY;
+                    const arcH = Math.max(35, Math.abs(fdy) * 0.45 + 25);
+
+                    flyEl.style.setProperty('--fly-mid-x', `${fdx * 0.5}px`);
+                    flyEl.style.setProperty('--fly-mid-y', `${Math.min(fdy * 0.5, -arcH)}px`);
+                    flyEl.style.setProperty('--fly-end-x', `${fdx}px`);
+                    flyEl.style.setProperty('--fly-end-y', `${fdy}px`);
+                    flyEl.style.setProperty('--fly-duration', `${flyDuration}ms`);
+
+                    document.body.appendChild(flyEl);
+
+                    // When this fruit lands
+                    setTimeout(() => {
+                        flyEl.remove();
+
+                        // Squash receiving bottle
+                        destinationTube.classList.remove('bounce-receive');
+                        void destinationTube.offsetWidth; // trigger reflow
+                        destinationTube.classList.add('bounce-receive');
+
+                        // Squash the corresponding fruit piece inside the bottle
+                        const pieces = destinationTube.querySelectorAll('.fruit-piece');
+                        const destTotal = this.tubes[toIdx].length;
+                        const landIndex = destTotal - amount + i;
+                        if (pieces && pieces[landIndex]) {
+                            pieces[landIndex].classList.add('fruit-land');
+                            setTimeout(() => {
+                                pieces[landIndex].classList.remove('fruit-land');
+                            }, 400);
+                        }
+                    }, flyDuration);
+
+                }, i * stagger);
+            }
+        }, liftDelay);
 
         setTimeout(() => {
             source.classList.remove(pourClass);
             destination.classList.remove('receiving-pour');
-        }, duration);
+            sourceTube.style.removeProperty('--pour-tx');
+            sourceTube.style.removeProperty('--pour-ty');
+        }, totalDuration);
 
-        return duration;
+        return totalDuration;
     }
 
     isCompletedBottle(tube) {
@@ -994,20 +1234,32 @@ class Game {
             const bottle = containers[index];
             if (!bottle || bottle.classList.contains('completed-celebration')) return;
 
+            const completedColor = this.tubes[index][0];
+            const fruit = FRUIT_MAPPING[completedColor] || '✨';
+
             bottle.classList.add('completed-celebration');
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < 5; i++) {
                 const sparkle = document.createElement('span');
                 sparkle.className = 'bottle-sparkle';
-                const fruit = FRUIT_MAPPING[this.tubes[index][0]] || '✨';
                 sparkle.textContent = fruit;
-                sparkle.style.setProperty('--sparkle-x', `${(Math.random() - 0.5) * 60}px`);
-                sparkle.style.setProperty('--sparkle-y', `${-20 - Math.random() * 40}px`);
-                sparkle.style.animationDelay = `${i * 80}ms`;
+                sparkle.style.setProperty('--sparkle-x', `${(Math.random() - 0.5) * 70}px`);
+                sparkle.style.setProperty('--sparkle-y', `${-25 - Math.random() * 45}px`);
+                sparkle.style.animationDelay = `${i * 60}ms`;
                 bottle.appendChild(sparkle);
-                setTimeout(() => sparkle.remove(), 700);
+                setTimeout(() => sparkle.remove(), 800);
             }
 
-            setTimeout(() => bottle.classList.remove('completed-celebration'), 560);
+            setTimeout(() => bottle.classList.remove('completed-celebration'), 700);
+
+            // Update mascot with specific fruit name
+            const fruitNames = {
+                'red': 'Strawberries', 'blue': 'Blueberries', 'green': 'Apples',
+                'yellow': 'Lemons', 'purple': 'Grapes', 'pink': 'Peaches',
+                'orange': 'Oranges', 'cyan': 'Melons'
+            };
+            const name = fruitNames[completedColor] || 'Fruit';
+            const speech = this.mascotGuide?.querySelector('.mascot-speech');
+            if (speech) speech.textContent = `${name} sorted!`;
         });
 
         if (indexes.length) this.reactMascot('celebrate');
@@ -1022,11 +1274,11 @@ class Game {
 
         const speech = this.mascotGuide.querySelector('.mascot-speech');
         const messages = {
-            idle: "Sort the juice!",
+            idle: "Sort the fruit!",
             ready: 'Pick a match!',
-            happy: 'Nice pour!',
-            confused: 'Try another!',
-            celebrate: 'Juice complete!'
+            happy: 'Yummy!',
+            confused: 'Try another fruit!',
+            celebrate: 'Fruit sorted!'
         };
         if (speech) speech.textContent = messages[reaction] || messages.idle;
 
@@ -1060,6 +1312,7 @@ class Game {
 
         this.selectedTubeIndex = null;
         this.renderBoard();
+        this.saveActiveState();
     }
 
     addExtraTube() {
@@ -1096,6 +1349,7 @@ class Game {
         this.selectedTubeIndex = null;
         const newIndex = this.tubes.length - 1;
         this.renderBoard(newIndex);
+        this.saveActiveState();
     }
 
     showHint() {
@@ -1112,6 +1366,7 @@ class Game {
         this.essence -= HINT_COST;
         localStorage.setItem('colorSortEssence', this.essence);
         this.essenceDisplay.textContent = this.essence;
+        this.hintsUsedThisLevel++;
 
         this.playSound('win');
 
@@ -1150,6 +1405,8 @@ class Game {
         if (!foundHint) {
             this.playSound('error');
             alert("No more valid moves! Try undoing or adding a tube.");
+        } else {
+            this.saveActiveState();
         }
     }
 
@@ -1188,7 +1445,7 @@ class Game {
                 if (textEl) textEl.textContent = 'Tap me!';
                 containers[0].appendChild(this.tutorialTip);
             } else if (this.tutorialStep === 2) {
-                if (textEl) textEl.textContent = 'Now pour!';
+                if (textEl) textEl.textContent = 'Match the fruit!';
                 containers[containers.length - 1].appendChild(this.tutorialTip);
             } else if (this.tutorialStep === 3) {
                 if (textEl) textEl.textContent = 'Great! 🍓';
@@ -1201,6 +1458,69 @@ class Game {
                 }, 2000);
             }
         }, 50);
+    }
+
+    getTotalStars() {
+        const starsObj = JSON.parse(localStorage.getItem('colorSortLevelStars') || '{}');
+        return Object.values(starsObj).reduce((sum, val) => sum + val, 0);
+    }
+
+    getNextUnlockProgress() {
+        const level = this.level;
+        const totalStars = this.getTotalStars();
+        const dailyWins = parseInt(localStorage.getItem('colorSortDailyWinsCount') || '0');
+        
+        if (level < 4) {
+            return { text: "Next Unlock: Orange 🍊 at Level 4", current: level, target: 4 };
+        }
+        if (level < 7) {
+            return { text: "Next Unlock: Lemon 🍋 at Level 7", current: level, target: 7 };
+        }
+        if (level < 10 && !this.purchasedItems.includes('skin-candy')) {
+            return { text: "Next Unlock: Candy Bottle 🍬 at Level 10", current: level, target: 10 };
+        }
+        if (level < 11) {
+            return { text: "Next Unlock: Grape 🍇 at Level 11", current: level, target: 11 };
+        }
+        if (totalStars < 20 && !this.purchasedItems.includes('skin-rainbow')) {
+            return { text: "Next Unlock: Rainbow Bottle 🌈 at 20 Stars", current: totalStars, target: 20 };
+        }
+        if (level < 16) {
+            return { text: "Next Unlock: Peach 🍑 at Level 16", current: level, target: 16 };
+        }
+        if (level < 22) {
+            return { text: "Next Unlock: Melon 🍈 at Level 22", current: level, target: 22 };
+        }
+        if (dailyWins < 5 && !this.purchasedItems.includes('skin-bunny')) {
+            return { text: "Next Unlock: Bunny Bottle 🐰 at 5 Daily Wins", current: dailyWins, target: 5 };
+        }
+        return { text: "All Collection Unlocked! 🎉", current: 1, target: 1 };
+    }
+
+    checkAchievementUnlocks() {
+        const level = this.level;
+        const totalStars = this.getTotalStars();
+        const dailyWins = parseInt(localStorage.getItem('colorSortDailyWinsCount') || '0');
+        
+        let unlockedNew = false;
+        
+        if (level >= 10 && !this.purchasedItems.includes('skin-candy')) {
+            this.purchasedItems.push('skin-candy');
+            unlockedNew = true;
+        }
+        if (totalStars >= 20 && !this.purchasedItems.includes('skin-rainbow')) {
+            this.purchasedItems.push('skin-rainbow');
+            unlockedNew = true;
+        }
+        if (dailyWins >= 5 && !this.purchasedItems.includes('skin-bunny')) {
+            this.purchasedItems.push('skin-bunny');
+            unlockedNew = true;
+        }
+        
+        if (unlockedNew) {
+            localStorage.setItem('colorSortPurchased', JSON.stringify(this.purchasedItems));
+            this.reactMascot('celebrate');
+        }
     }
 
     checkWin() {
@@ -1219,18 +1539,121 @@ class Game {
             this.vibrate('win');
             this.reactMascot('celebrate');
             
+            // Star calculations
+            const moves = this.moveHistory.length;
+            const hints = this.hintsUsedThisLevel || 0;
+            const target = this.getTargetMovesForLevel(this.level);
+
+            let stars = 1;
+            if (moves <= target && hints === 0) {
+                stars = 3;
+            } else if (moves <= target * 1.5 && hints <= 1) {
+                stars = 2;
+            }
+
+            // Check if level was already completed before this win
+            let earnedAlready = false;
+            if (!this.isDailyChallenge) {
+                const starsObj = JSON.parse(localStorage.getItem('colorSortLevelStars') || '{}');
+                if (starsObj[this.level] !== undefined && starsObj[this.level] > 0) {
+                    earnedAlready = true;
+                }
+            }
+
+            // Save stars in localStorage
+            if (!this.isDailyChallenge) {
+                const starsObj = JSON.parse(localStorage.getItem('colorSortLevelStars') || '{}');
+                const existingStars = starsObj[this.level] || 0;
+                if (stars > existingStars) {
+                    starsObj[this.level] = stars;
+                    localStorage.setItem('colorSortLevelStars', JSON.stringify(starsObj));
+                }
+            }
+
+            // Toggle stars in the DOM
+            const starItems = document.querySelectorAll('.star-item');
+            starItems.forEach((star, idx) => {
+                if (idx < stars) {
+                    star.style.display = 'inline-block';
+                    star.textContent = '⭐';
+                } else {
+                    star.style.display = 'inline-block';
+                    star.textContent = '☆';
+                }
+            });
+
+            const starLabel = document.querySelector('.star-label');
+            if (starLabel) {
+                starLabel.textContent = stars === 3 ? "Perfect! ⭐⭐⭐" : (stars === 2 ? "Great! ⭐⭐" : "Good! ⭐");
+            }
+
             // Earn Diamonds
             const reward = this.isDailyChallenge ? 200 : (50 + Math.floor(this.level / 5) * 10);
             
             if (this.isDailyChallenge) {
-                // Mark today as won
-                localStorage.setItem('colorSortLastDailyWin', new Date().toDateString());
+                // Mark today as won & calculate streak
+                const lastDateStr = localStorage.getItem('colorSortLastDailyWin');
+                const today = new Date();
+                const todayStr = today.toDateString();
+                
+                let currentStreak = parseInt(localStorage.getItem('colorSortDailyStreak') || '0');
+                if (lastDateStr) {
+                    const lastDate = new Date(lastDateStr);
+                    const diffTime = Math.abs(today - lastDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDays === 1) {
+                        currentStreak++;
+                    } else if (diffDays > 1) {
+                        currentStreak = 1;
+                    }
+                } else {
+                    currentStreak = 1;
+                }
+                
+                localStorage.setItem('colorSortDailyStreak', currentStreak);
+                localStorage.setItem('colorSortLastDailyWin', todayStr);
+                
+                const count = parseInt(localStorage.getItem('colorSortDailyWinsCount') || '0') + 1;
+                localStorage.setItem('colorSortDailyWinsCount', count);
             }
             
-            this.earnDiamonds(reward);
+            if (!earnedAlready) {
+                this.earnDiamonds(reward);
+            }
+
+            // Clear mid-level saved state upon winning
+            this.clearActiveState();
+
+            // Auto achievement checks
+            this.checkAchievementUnlocks();
+            
+            // Get unique fruit emojis from current level tubes
+            const uniqueColors = [...new Set(this.tubes.flat())].filter(Boolean);
+            const fruits = uniqueColors.map(color => FRUIT_MAPPING[color] || '●');
+            
+            const fruitsContainer = document.getElementById('completedFruitsContainer');
+            if (fruitsContainer) {
+                fruitsContainer.innerHTML = '';
+                fruits.forEach((fruit, idx) => {
+                    const span = document.createElement('span');
+                    span.textContent = fruit;
+                    span.style.animationDelay = `${0.4 + idx * 0.1}s`;
+                    fruitsContainer.appendChild(span);
+                });
+            }
+
+            // Next Unlock milestone progress display
+            const progressInfo = this.getNextUnlockProgress();
+            const winProgressText = document.getElementById('winProgressText');
+            const winProgressBarFill = document.getElementById('winProgressBarFill');
+            if (winProgressText && winProgressBarFill) {
+                winProgressText.textContent = progressInfo.text;
+                const pct = Math.min(100, Math.floor((progressInfo.current / progressInfo.target) * 100));
+                winProgressBarFill.style.width = `${pct}%`;
+            }
             
             setTimeout(() => {
-                document.getElementById('essenceReward').textContent = reward;
+                document.getElementById('essenceReward').textContent = earnedAlready ? "0 (Replayed)" : reward;
                 this.winModal.classList.remove('hidden');
                 this.triggerWinAnimation();
             }, 500);
@@ -1269,6 +1692,10 @@ class Game {
     }
 
     nextLevel() {
+        if (this.nextLevelLocked) return;
+        this.nextLevelLocked = true;
+        setTimeout(() => { this.nextLevelLocked = false; }, 800);
+
         if (this.isDailyChallenge) {
             this.isDailyChallenge = false;
             this.level = this.mainGameLevel;
@@ -1339,30 +1766,56 @@ class Game {
 
     renderShop() {
         this.shopItemsContainer.innerHTML = '';
+        
+        const level = this.level;
+        const totalStars = this.getTotalStars();
+        const dailyWins = parseInt(localStorage.getItem('colorSortDailyWinsCount') || '0');
+
         this.shopData = this.shopTab === 'skins' ? [
-            { id: 'skin-default', name: 'Default', price: 0, preview: '' },
-            { id: 'skin-galaxy', name: 'Galaxy Glow', price: 500, preview: '/assets/images/galaxy_glow_texture_1777181001273.png' },
-            { id: 'skin-gold', name: 'Molten Gold', price: 1000, preview: '/assets/images/molten_gold_texture_1777181017498.png' },
-            { id: 'skin-rainbow', name: 'Rainbow Pulse', price: 1500, preview: '/assets/images/rainbow_pulse_texture_1777181035863.png' }
+            { id: 'skin-default', name: 'Default Bottle', price: 0, type: 'diamonds', preview: '' },
+            { id: 'skin-candy', name: 'Candy Bottle 🍬', price: 0, type: 'achievement', reqText: 'Reach Level 10', isUnlocked: level >= 10, preview: '' },
+            { id: 'skin-rainbow', name: 'Rainbow Bottle 🌈', price: 0, type: 'achievement', reqText: 'Earn 20 Stars', isUnlocked: totalStars >= 20, preview: '/assets/images/rainbow_pulse_texture_1777181035863.png' },
+            { id: 'skin-bunny', name: 'Bunny Bottle 🐰', price: 0, type: 'achievement', reqText: 'Win 5 Dailies', isUnlocked: dailyWins >= 5, preview: '' },
+            { id: 'skin-galaxy', name: 'Galaxy Glow', price: 500, type: 'diamonds', preview: '/assets/images/galaxy_glow_texture_1777181001273.png' },
+            { id: 'skin-gold', name: 'Molten Gold', price: 1000, type: 'diamonds', preview: '/assets/images/molten_gold_texture_1777181017498.png' }
         ] : [
-            { id: 'lab-default', name: 'Standard Lab', price: 0, preview: '' },
-            { id: 'lab-premium', name: 'Master Laboratory', price: 2000, preview: '/assets/images/alchemist_lab_bg_1777181053658.png' }
+            { id: 'lab-default', name: 'Standard Lab', price: 0, type: 'diamonds', preview: '' },
+            { id: 'lab-premium', name: 'Master Laboratory', price: 2000, type: 'diamonds', preview: '/assets/images/alchemist_lab_bg_1777181053658.png' }
         ];
+
+        // Ensure auto-unlock items are in purchased list
+        this.shopData.forEach(item => {
+            if (item.type === 'achievement' && item.isUnlocked && !this.purchasedItems.includes(item.id)) {
+                this.purchasedItems.push(item.id);
+                localStorage.setItem('colorSortPurchased', JSON.stringify(this.purchasedItems));
+            }
+        });
 
         this.shopData.forEach(item => {
             const isOwned = this.purchasedItems.includes(item.id);
             const isActive = this.activeSkin === item.id || this.activeLab === item.id;
             
+            let priceLabel = 'FREE';
+            let actionBtn = '';
+            
+            if (isOwned) {
+                priceLabel = 'OWNED';
+                actionBtn = `<button class="btn btn-buy ${isActive ? 'btn-secondary' : 'btn-premium'}" onclick="game.handleShopAction('${item.id}', 0)">${isActive ? 'Equipped' : 'Equip'}</button>`;
+            } else if (item.type === 'achievement') {
+                priceLabel = `🏆 ${item.reqText}`;
+                actionBtn = `<button class="btn btn-buy btn-secondary" disabled>Locked</button>`;
+            } else {
+                priceLabel = item.price === 0 ? 'FREE' : '💎 ' + item.price;
+                actionBtn = `<button class="btn btn-buy btn-premium" onclick="game.handleShopAction('${item.id}', ${item.price})">Buy</button>`;
+            }
+
             const div = document.createElement('div');
             div.className = 'shop-item';
             div.innerHTML = `
                 <div class="item-preview" style="background-image: url('${item.preview}')"></div>
                 <span class="item-name">${item.name}</span>
-                <span class="item-price">${isOwned ? 'OWNED' : '💎 ' + item.price}</span>
-                <button class="btn btn-buy ${isOwned ? 'btn-secondary' : 'btn-premium'}" 
-                        onclick="game.handleShopAction('${item.id}', ${item.price})">
-                    ${isOwned ? (isActive ? 'Equipped' : 'Equip') : 'Buy'}
-                </button>
+                <span class="item-price">${priceLabel}</span>
+                ${actionBtn}
             `;
             this.shopItemsContainer.appendChild(div);
         });
@@ -1405,6 +1858,215 @@ class Game {
         }
     }
 
+
+    toggleProgressModal() {
+        if (!this.progressModal) {
+            this.progressModal = document.getElementById('progressModal');
+            this.progressTabContent = document.getElementById('progressTabContent');
+        }
+        if (!this.progressModal) return;
+        this.progressModal.classList.toggle('hidden');
+        if (!this.progressModal.classList.contains('hidden')) {
+            this.renderProgress();
+        }
+    }
+
+    switchProgressTab(tab) {
+        this.progressTab = tab;
+        
+        const tabMapBtn = document.getElementById('tabMapBtn');
+        const tabFruitsBtn = document.getElementById('tabFruitsBtn');
+        const tabMilestonesBtn = document.getElementById('tabMilestonesBtn');
+        
+        if (tabMapBtn) tabMapBtn.classList.toggle('active', tab === 'map');
+        if (tabFruitsBtn) tabFruitsBtn.classList.toggle('active', tab === 'fruits');
+        if (tabMilestonesBtn) tabMilestonesBtn.classList.toggle('active', tab === 'milestones');
+        
+        this.renderProgress();
+    }
+
+    renderProgress() {
+        if (!this.progressTabContent) return;
+        this.progressTabContent.innerHTML = '';
+        
+        const level = this.level;
+        const totalStars = this.getTotalStars();
+        const dailyWins = parseInt(localStorage.getItem('colorSortDailyWinsCount') || '0');
+        const starsObj = JSON.parse(localStorage.getItem('colorSortLevelStars') || '{}');
+
+        if (this.progressTab === 'map') {
+            const container = document.createElement('div');
+            container.className = 'progress-map';
+            
+            const worlds = [
+                { name: "Berry Garden 🍓", range: [1, 5] },
+                { name: "Fruit Orchard 🍊", range: [6, 15] },
+                { name: "Tropical Garden 🍉", range: [16, 100] }
+            ];
+            
+            worlds.forEach(w => {
+                if (level >= w.range[0]) {
+                    const section = document.createElement('div');
+                    section.className = 'map-world-section';
+                    section.innerHTML = `<h3>${w.name}</h3>`;
+                    
+                    const grid = document.createElement('div');
+                    grid.className = 'map-grid';
+                    
+                    const maxRenderLvl = Math.min(w.range[1], level + 3);
+                    for (let l = w.range[0]; l <= maxRenderLvl; l++) {
+                        const isCompleted = l < level;
+                        const isCurrent = l === level;
+                        const isLocked = l > level;
+                        
+                        let starDisplay = '';
+                        if (isCompleted) {
+                            const lStars = starsObj[l] || 1;
+                            starDisplay = '⭐'.repeat(lStars) + '☆'.repeat(3 - lStars);
+                        } else if (isCurrent) {
+                            starDisplay = '🎯 Active';
+                        } else {
+                            starDisplay = '🔒 Locked';
+                        }
+                        
+                        const item = document.createElement('div');
+                        item.className = `map-node ${isCurrent ? 'current' : (isLocked ? 'locked' : 'completed')}`;
+                        item.innerHTML = `
+                            <span class="map-level-num">Lvl ${l}</span>
+                            <span class="map-level-stars">${starDisplay}</span>
+                        `;
+                        if (!isLocked) {
+                            item.onclick = () => {
+                                this.level = l;
+                                this.initLevel();
+                                this.toggleProgressModal();
+                            };
+                        }
+                        grid.appendChild(item);
+                    }
+                    section.appendChild(grid);
+                    container.appendChild(section);
+                }
+            });
+            this.progressTabContent.appendChild(container);
+            
+        } else if (this.progressTab === 'fruits') {
+            const container = document.createElement('div');
+            container.className = 'progress-fruits-grid';
+            
+            const fruits = [
+                { char: '🍓', name: 'Strawberry', req: 0, desc: 'Sweet starter!' },
+                { char: '🫐', name: 'Blueberry', req: 0, desc: 'Juicy berry!' },
+                { char: '🍏', name: 'Green Apple', req: 0, desc: 'Sour bite!' },
+                { char: '🍊', name: 'Orange', req: 4, desc: 'Zesty orange!' },
+                { char: '🍋', name: 'Lemon', req: 7, desc: 'Super sour!' },
+                { char: '🍇', name: 'Grape', req: 11, desc: 'Perfect grape!' },
+                { char: '🍑', name: 'Peach', req: 16, desc: 'Soft peach!' },
+                { char: '🍈', name: 'Melon', req: 22, desc: 'Tropical melon!' }
+            ];
+            
+            fruits.forEach(f => {
+                const isUnlocked = level >= f.req;
+                const div = document.createElement('div');
+                div.className = `collection-item ${isUnlocked ? 'unlocked' : 'locked'}`;
+                
+                div.innerHTML = `
+                    <span class="collection-char">${isUnlocked ? f.char : '🔒'}</span>
+                    <span class="collection-name">${f.name}</span>
+                    <span class="collection-desc">${isUnlocked ? f.desc : 'Reach Lvl ' + f.req}</span>
+                `;
+                container.appendChild(div);
+            });
+            this.progressTabContent.appendChild(container);
+            
+        } else if (this.progressTab === 'milestones') {
+            const container = document.createElement('div');
+            container.className = 'progress-milestones';
+            
+            const achievements = [
+                {
+                    title: "Candy Garden Mastery 🍬",
+                    desc: "Unlock Candy Bottle skin at Level 10",
+                    current: level,
+                    target: 10,
+                    id: "skin-candy"
+                },
+                {
+                    title: "Star Collector 🌈",
+                    desc: "Unlock Rainbow Bottle skin at 20 Stars",
+                    current: totalStars,
+                    target: 20,
+                    id: "skin-rainbow"
+                },
+                {
+                    title: "Daily Challenger 🐰",
+                    desc: "Unlock Bunny Bottle skin at 5 Daily wins",
+                    current: dailyWins,
+                    target: 5,
+                    id: "skin-bunny"
+                }
+            ];
+            
+            achievements.forEach(a => {
+                const isCompleted = a.current >= a.target;
+                const isEquipped = this.activeSkin === a.id;
+                const pct = Math.min(100, Math.floor((a.current / a.target) * 100));
+                
+                let btnHtml = '';
+                if (isCompleted) {
+                    btnHtml = `<button class="btn btn-buy ${isEquipped ? 'btn-secondary' : 'btn-premium'}" onclick="game.equipMilestoneSkin('${a.id}')">${isEquipped ? 'Equipped' : 'Equip'}</button>`;
+                } else {
+                    btnHtml = `<button class="btn btn-secondary btn-buy" disabled>In Progress</button>`;
+                }
+                
+                const div = document.createElement('div');
+                div.className = 'milestone-card';
+                div.innerHTML = `
+                    <div class="milestone-info">
+                        <h4>${a.title}</h4>
+                        <p>${a.desc}</p>
+                    </div>
+                    <div class="milestone-progress-section">
+                        <div class="milestone-bar-bg">
+                            <div class="milestone-bar-fill" style="width: ${pct}%"></div>
+                        </div>
+                        <span class="milestone-progress-text">${a.current} / ${a.target}</span>
+                    </div>
+                    ${btnHtml}
+                `;
+                container.appendChild(div);
+            });
+            this.progressTabContent.appendChild(container);
+        }
+    }
+
+    equipMilestoneSkin(id) {
+        if (!this.purchasedItems.includes(id)) {
+            this.purchasedItems.push(id);
+            localStorage.setItem('colorSortPurchased', JSON.stringify(this.purchasedItems));
+        }
+        this.activeSkin = id;
+        localStorage.setItem('colorSortActiveSkin', id);
+        this.applyLabBackground();
+        this.renderProgress();
+        this.renderBoard();
+    }
+
+    saveActiveState() {
+        const stateObj = {
+            level: this.level,
+            isDailyChallenge: this.isDailyChallenge,
+            tubes: this.tubes,
+            tubeStates: this.tubeStates,
+            moveHistory: this.moveHistory,
+            hintsUsedThisLevel: this.hintsUsedThisLevel
+        };
+        localStorage.setItem('colorSortActiveGameState', JSON.stringify(stateObj));
+    }
+
+    clearActiveState() {
+        localStorage.removeItem('colorSortActiveGameState');
+    }
 
     showLegal(type) {
         this.legalModal.classList.remove('hidden');

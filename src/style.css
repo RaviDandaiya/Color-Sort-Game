@@ -189,6 +189,25 @@ body.skin-rainbow::before {
 .dot-two { top: 10%; right: 25%; animation-delay: 1.2s; width: 6px; height: 6px; }
 .dot-three { top: 40%; left: 80%; animation-delay: 2.5s; width: 10px; height: 10px; background: #FFB5C8; }
 
+/* Environmental background bubbles */
+.bg-bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.05) 70%);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+  animation: bubbleFloat 8s infinite ease-in-out alternate;
+}
+.bubble-1 { width: 30px; height: 30px; top: 25%; left: 8%; animation-delay: 0s; }
+.bubble-2 { width: 45px; height: 45px; top: 60%; right: 5%; animation-delay: 1.5s; animation-duration: 10s; }
+.bubble-3 { width: 22px; height: 22px; bottom: 15%; left: 12%; animation-delay: 3s; }
+
+@keyframes bubbleFloat {
+  0% { transform: translateY(0) scale(1); opacity: 0.4; }
+  100% { transform: translateY(-20px) scale(1.05); opacity: 0.8; }
+}
+
 /* ==========================================================================
    5. App Container & Header
    ========================================================================== */
@@ -338,12 +357,12 @@ header {
 }
 
 .game-board {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(var(--board-cols, 5), var(--bottle-w, clamp(54px, 15vw, 66px)));
   justify-content: center;
-  align-items: center;
-  gap: clamp(10px, 3vw, 24px);
-  padding: 20px 10px;
+  align-content: center;
+  gap: var(--board-gap, clamp(8px, 2vw, 16px));
+  padding: 12px 8px;
   position: relative;
 }
 
@@ -369,67 +388,93 @@ header {
   align-items: center;
   cursor: pointer;
   position: relative;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
   -webkit-tap-highlight-color: transparent;
 }
 
 .tube-container::after {
   content: "";
   position: absolute;
-  bottom: -10px;
-  width: 80%;
-  height: 12px;
-  background: radial-gradient(ellipse at center, rgba(123, 107, 158, 0.2) 0%, transparent 70%);
+  bottom: -4px;
+  width: 70%;
+  height: 8px;
+  background: radial-gradient(ellipse at center, rgba(123, 107, 158, 0.22) 0%, transparent 70%);
   border-radius: 50%;
-  z-index: -1;
-  transition: all 0.3s;
+  z-index: 0;
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s;
 }
 
 .tube {
-  width: clamp(54px, 15vw, 66px);
-  height: clamp(140px, 38vw, 180px);
+  width: var(--bottle-w, clamp(54px, 15vw, 66px));
+  height: var(--bottle-h, clamp(140px, 38vw, 180px));
   border-radius: 22px 22px 34px 34px;
-  background: var(--glass-bg);
-  border: 3px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.38);
+  border: 3.5px solid rgba(255, 255, 255, 0.95);
   box-shadow: 
-    0 10px 20px rgba(123, 107, 158, 0.1),
-    inset 8px 0 16px rgba(255, 255, 255, 0.6),
-    inset -4px 0 12px rgba(0, 0, 0, 0.05);
+    0 8px 24px rgba(123, 107, 158, 0.12),
+    inset -4px -4px 10px rgba(255, 255, 255, 0.55),
+    inset 4px 4px 10px rgba(123, 107, 158, 0.05);
   margin-top: 22px; /* Space for neck */
   position: relative;
   overflow: visible;
   isolation: isolate;
   transform-origin: 50% 85%;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s, border-color 0.3s;
+  z-index: 10;
 }
 
+/* Glass shiny reflection highlight */
 .tube::before {
   content: "";
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(to right, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.1) 15%, transparent 30%);
+  top: 8%;
+  left: 8%;
+  width: 12%;
+  height: 80%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.1) 100%);
+  border-radius: 10px;
   z-index: 8;
   pointer-events: none;
 }
 
 .tube::after {
-  display: none !important; /* Hide old dark overlay */
+  display: none !important;
 }
 
-/* Bottle Neck (New structure based on provided HTML) */
+/* Empty bottle transparent design */
+.tube-container.is-empty .tube {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.65);
+  box-shadow: 
+    0 6px 16px rgba(123, 107, 158, 0.06),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.4),
+    inset 2px 2px 6px rgba(123, 107, 158, 0.02);
+}
+
+.tube-container.is-empty .bottle-neck {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.65);
+}
+
+.tube-container.is-empty .bottle-rim {
+  background: rgba(245, 252, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+/* Bottle Neck */
 .bottle-neck {
   position: absolute;
   z-index: 10;
-  left: 25%;
-  width: 50%;
+  left: 26%;
+  width: 48%;
   top: -18px;
   height: 22px;
-  border: 3px solid var(--glass-border);
+  border: 3.5px solid rgba(255, 255, 255, 0.95);
   border-bottom: none;
   border-radius: 10px 10px 2px 2px;
-  background: rgba(255,255,255,0.4);
-  box-shadow: inset 4px 0 8px rgba(255,255,255,0.6);
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: inset 3px 0 6px rgba(255, 255, 255, 0.5);
+  transition: border-color 0.3s, background-color 0.3s;
 }
 
 .bottle-rim {
@@ -439,143 +484,120 @@ header {
   width: 60%;
   top: -22px;
   height: 10px;
-  border: 2.5px solid rgba(255,255,255,0.98);
+  border: 2.5px solid rgba(255, 255, 255, 0.98);
   border-radius: 50%;
-  background: rgba(245,252,255,0.8);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.bottle-label {
-  position: absolute;
-  z-index: 15;
-  top: 20%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 24px;
-  height: 24px;
-  background: rgba(255, 255, 255, 0.85);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  border: 1.5px solid rgba(255, 255, 255, 0.95);
-  pointer-events: none;
-  transition: opacity 0.3s ease;
+  background: rgba(245, 252, 255, 0.85);
+  box-shadow: 0 2px 4px rgba(123, 107, 158, 0.05);
+  transition: border-color 0.3s, background-color 0.3s;
 }
 
 /* ==========================================================================
-   9. Liquid Design
+   9. Fruit Stack Design
    ========================================================================== */
-.water {
+.fruit-stack {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
+  top: 10px;
+  bottom: 8px;
+  left: 4px;
+  right: 4px;
   z-index: 2;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  border-radius: 18px 18px 31px 31px; /* Match inner bottle */
-  overflow: hidden;
-  transition: height 200ms ease;
-  height: 0%; /* Driven by JS */
-}
-
-.water-segment {
-  width: 100%;
-  position: relative;
-  background-image: linear-gradient(90deg, rgba(255,255,255,0.2) 0%, transparent 40%, rgba(0,0,0,0.05) 100%);
-  box-shadow: inset 0 2px 4px rgba(255,255,255,0.3);
-  transition: background-color 200ms, height 200ms;
-}
-
-.water-segment::after {
-  content: "";
-  position: absolute;
-  top: -6px;
-  left: 0;
-  width: 100%;
-  height: 12px;
-  background: inherit;
-  border-radius: 50%;
-  filter: brightness(1.12) saturate(1.06);
-  box-shadow: inset 0 2px 3px rgba(255,255,255,0.4);
-  z-index: 1;
-}
-
-.water-segment::before {
-  content: "";
-  position: absolute;
-  left: 12%;
-  top: 0;
-  width: 14%;
-  height: 100%;
-  background: linear-gradient(to right, transparent, rgba(255,255,255,0.4), transparent);
-  z-index: 2;
+  align-items: center;
   pointer-events: none;
 }
 
-.water-segment:first-child::after {
-  box-shadow: inset 0 3px 6px rgba(255,255,255,0.7);
+.fruit-piece {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(1.2rem, 3.8vw, 1.6rem);
+  position: relative;
+  background: transparent;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.water-segment:last-child {
-  border-radius: 0 0 31px 31px;
+.fruit-piece:not(:first-child) {
+  margin-top: -3px; /* physical overlapping stack overlap */
+}
+
+/* Circular physical backing for fruit pieces */
+.fruit-piece .fruit-bg {
+  position: absolute;
+  width: 82%;
+  height: 82%;
+  border-radius: 50%;
+  opacity: 0.18;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4), 0 3px 6px rgba(0, 0, 0, 0.05);
+  pointer-events: none;
+}
+
+.fruit-char {
+  z-index: 3;
+  filter: drop-shadow(0 2px 3px rgba(123, 107, 158, 0.18));
+  transition: transform 0.15s ease;
 }
 
 /* ==========================================================================
    10. Bottle States & Interactions
    ========================================================================== */
 .tube-container.selected {
-  transform: translateY(-14px) scale(1.06);
-  z-index: 7;
+  transform: translateY(-16px) scale(1.08);
+  z-index: 75;
 }
 
 .tube-container.selected .tube {
-  box-shadow: 0 0 0 4px rgba(255, 107, 157, 0.3), 0 15px 25px rgba(255, 107, 157, 0.2);
-  animation: bottleSelect 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 
+    0 15px 30px rgba(123, 107, 158, 0.22), 
+    0 0 0 4px rgba(255, 107, 157, 0.4),
+    inset -4px -4px 10px rgba(255, 255, 255, 0.6);
+  animation: bottleSelect 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .tube-container.selected::after {
-  transform: scale(0.7);
-  opacity: 0.5;
+  transform: scale(0.5);
+  opacity: 0.35;
 }
 
+/* Valid target preview pulse */
 .tube-container.destination-preview .tube {
-  box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.35);
-  animation: receiverInvite 1.5s infinite;
+  box-shadow: 
+    0 8px 20px rgba(78, 205, 196, 0.18),
+    0 0 0 3.5px rgba(78, 205, 196, 0.45);
+  animation: targetInvite 1.2s infinite alternate ease-in-out;
 }
 
 .tube-container.destination-preview .bottle-rim {
-  background: rgba(220, 255, 250, 0.9);
+  background: rgba(220, 255, 250, 0.95);
+  border-color: rgba(78, 205, 196, 0.8);
 }
 
+/* Coordinate-aware pouring transitions */
 .tube-container.pouring-right {
-  transform: translate(25%, -25px) scale(1.1);
-  z-index: 15;
+  z-index: 100;
 }
 
 .tube-container.pouring-left {
-  transform: translate(-25%, -25px) scale(1.1);
-  z-index: 15;
+  z-index: 100;
 }
 
 .tube-container.pouring-right .tube {
-  transform: rotate(20deg);
+  transform: translate(var(--pour-tx, 36px), var(--pour-ty, -40px)) rotate(80deg);
 }
 
 .tube-container.pouring-left .tube {
-  transform: rotate(-20deg);
+  transform: translate(var(--pour-tx, -36px), var(--pour-ty, -40px)) rotate(-80deg);
 }
 
+/* Receiving squash reaction */
 .tube-container.receiving-pour .tube {
-  animation: potionReceive 0.5s ease;
+  /* handled dynamically in js to trigger per fruit landed */
 }
 
-.tube-container.receiving-pour .water-segment:first-child::after {
-  animation: liquidWave 0.5s infinite alternate;
+.tube-container.receiving-pour .fruit-piece.fruit-land {
+  animation: fruitLand 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .tube-container.shake {
@@ -623,30 +645,17 @@ header {
 /* ==========================================================================
    11. Liquid Mechanics
    ========================================================================== */
-.water-segment.hidden-layer {
+.fruit-piece.hidden-layer {
   background-color: #2D3748 !important;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.water-segment.hidden-layer::before {
-  content: "?";
-  position: absolute;
   color: rgba(255,255,255,0.5);
   font-weight: bold;
   font-size: 1.2rem;
   font-family: var(--header-font);
-  z-index: 5;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: auto;
-  height: auto;
-  background: none;
+  border-radius: 8px;
+  margin: 1px 2px;
 }
 
-.water-segment.frozen-layer::after {
+.fruit-piece.frozen-layer::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -656,18 +665,19 @@ header {
   pointer-events: none;
 }
 
-.water-segment.mixing {
+.fruit-piece.mixing {
   animation: mixingPulse 1s infinite alternate;
 }
 
-.merge-glow {
+.fruit-piece.merge-glow::after {
+  content: "";
   position: absolute;
   inset: 0;
-  background: white;
-  opacity: 0;
+  background: rgba(255, 255, 255, 0.8);
   border-radius: inherit;
   z-index: 15;
   pointer-events: none;
+  opacity: 0;
   animation: mergeGlow 0.4s ease-out;
 }
 
@@ -709,6 +719,40 @@ header {
   height: 100%;
   background: linear-gradient(to right, transparent, rgba(255,255,255,0.9), transparent);
   animation: streamShimmer 0.5s linear infinite;
+}
+
+/* ==========================================================================
+   12b. Flying Fruit Animation
+   ========================================================================== */
+.fruit-fly {
+  position: fixed;
+  z-index: 200;
+  pointer-events: none;
+  font-size: 1.6rem;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.2));
+  animation: fruitArc var(--fly-duration, 400ms) cubic-bezier(0.2, 0, 0.3, 1) forwards;
+}
+
+@keyframes fruitArc {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(var(--fly-mid-x, 0px), var(--fly-mid-y, -40px)) scale(1.3) rotate(15deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--fly-end-x, 0px), var(--fly-end-y, 0px)) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes fruitLand {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.15, 0.88); }
+  70% { transform: scale(0.95, 1.05); }
+  100% { transform: scale(1); }
 }
 
 /* ==========================================================================
@@ -768,107 +812,34 @@ header {
   border-color: transparent transparent transparent white;
 }
 
-/* Pure CSS Bunny */
+/* Pure CSS Bunny — replaced with image mascot */
 .bunny-mascot {
   position: relative;
-  width: 52px;
-  height: 52px;
-  filter: drop-shadow(0 4px 8px rgba(123, 107, 158, 0.2));
-}
-
-.bunny-ear {
-  position: absolute;
-  width: 14px;
-  height: 28px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: #FFB5C8;
-  border: 2.5px solid white;
-  z-index: 1;
-}
-
-.bunny-ear::before {
-  content: "";
-  position: absolute;
-  inset: 3px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.ear-left {
-  left: 6px;
-  top: -16px;
-  transform: rotate(-15deg);
-  transform-origin: bottom center;
-}
-
-.ear-right {
-  right: 6px;
-  top: -16px;
-  transform: rotate(15deg);
-  transform-origin: bottom center;
-}
-
-.bunny-face {
-  width: 46px;
-  height: 44px;
+  overflow: hidden;
+  border: 2px solid white;
+  box-shadow: 0 4px 10px rgba(123, 107, 158, 0.15);
   background: white;
-  border-radius: 50%;
-  border: 2.5px solid #F0DDE4;
-  position: absolute;
-  bottom: 0;
-  left: 3px;
-  z-index: 2;
-  box-shadow: inset -3px -3px 6px rgba(0,0,0,0.03);
 }
 
-.bunny-eye {
-  width: 7px;
-  height: 9px;
-  background: #3D2C5E;
-  border-radius: 50%;
-  position: absolute;
-  top: 16px;
+.bunny-mascot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.bunny-eye::after {
-  content: "";
-  position: absolute;
-  top: 1px;
-  right: 1px;
-  width: 3px;
-  height: 3px;
-  background: white;
-  border-radius: 50%;
-}
-
-.eye-left { left: 11px; }
-.eye-right { right: 11px; }
-
-.bunny-nose {
-  width: 6px;
-  height: 5px;
-  background: #FFB5C8;
-  border-radius: 50%;
-  position: absolute;
-  top: 24px;
-  left: calc(50% - 3px);
-}
-
-.bunny-cheek {
-  width: 10px;
-  height: 7px;
-  background: rgba(255, 181, 200, 0.4);
-  border-radius: 50%;
-  position: absolute;
-  top: 23px;
-}
-
-.cheek-left { left: 4px; }
-.cheek-right { right: 4px; }
-
+/* Hide old CSS-drawn bunny parts when image is present */
+.bunny-ear,
+.bunny-face,
+.bunny-eye,
+.bunny-nose,
+.bunny-cheek,
 .bunny-paw {
-  display: none; /* Hide old text sparkle */
+  display: none;
 }
+
 
 /* ==========================================================================
    15. Mascot Animations
@@ -876,8 +847,6 @@ header {
 .mascot-idle .bunny-mascot {
   animation: bunnyFloat 2.5s infinite ease-in-out;
 }
-.mascot-idle .ear-left { animation: earWiggleL 4s infinite; }
-.mascot-idle .ear-right { animation: earWiggleR 4s infinite; }
 
 .mascot-ready .bunny-mascot {
   animation: bunnyBounce 1s infinite;
@@ -939,48 +908,65 @@ header {
    ========================================================================== */
 .game-footer {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 10px;
+  justify-content: center;
+  padding: 8px 12px env(safe-area-inset-bottom, 12px);
   z-index: 50;
   position: sticky;
   bottom: 0;
   width: 100%;
 }
 
-.primary-controls {
+.footer-controls {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: 8px;
   width: 100%;
-}
-
-.secondary-controls {
-  display: flex;
-  justify-content: center;
-  width: 100%;
+  max-width: 480px;
 }
 
 .game-footer .btn {
   flex: 1;
-  max-width: 160px;
-  font-size: 1rem;
-  padding: 10px 14px;
-  min-height: 48px;
-  border-radius: 24px;
+  font-size: 0.9rem;
+  padding: 8px 10px;
+  min-height: 46px;
+  border-radius: 18px;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(123, 107, 158, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.btn-action {
+.btn-primary-action {
   background: white;
   color: var(--text-primary);
-  font-weight: 700;
+}
+
+.btn-primary-action:hover, .btn-primary-action:active {
+  background: #FAF8FE;
+  border-color: rgba(123, 107, 158, 0.15);
 }
 
 .btn-secondary-action {
-  background: rgba(255,255,255, 0.85);
+  background: rgba(255, 255, 255, 0.42);
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  border: 1.5px dashed rgba(123, 107, 158, 0.3) !important;
+}
+
+.btn-secondary-action:hover, .btn-secondary-action:active {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(123, 107, 158, 0.5) !important;
+}
+
+/* Secondary styled currency badge inside footer buttons */
+.game-footer .badge {
+  background: rgba(123, 107, 158, 0.08);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 6px;
+  border: 1px solid rgba(123, 107, 158, 0.06);
+  margin-left: 2px;
 }
 
 /* ==========================================================================
@@ -1034,28 +1020,127 @@ header {
 }
 
 /* Win Modal Specifics */
+/* Win Modal Redesign */
 .win-content {
-  padding-top: 6rem;
+  padding: 24px 20px 20px;
   overflow: visible;
+  max-width: min(90vw, 360px);
   border: 4px solid var(--surface-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
-.mascot-container {
-  position: absolute;
-  top: -80px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 140px;
-  height: 140px;
+.win-mascot-container {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid white;
+  box-shadow: 0 4px 10px rgba(123, 107, 158, 0.15);
+  background: white;
+  margin-top: -64px;
+  margin-bottom: 4px;
+  z-index: 10;
 }
 
-.win-mascot {
+.win-mascot-container .win-mascot {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));
+  object-fit: cover;
   animation: mascotFloat 3s infinite ease-in-out;
-  /* NO mix-blend-mode */
+}
+
+.win-title {
+  font-size: 1.6rem;
+  color: var(--text-primary);
+  margin: 0;
+  font-weight: 800;
+  text-align: center;
+}
+
+.win-message {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+.completed-fruits-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 4px 0;
+}
+
+.completed-fruits-row span {
+  font-size: 1.5rem;
+  display: inline-block;
+  transform: scale(0);
+}
+
+.stars-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.star-item {
+  font-size: 1.6rem;
+  display: inline-block;
+  transform: scale(0);
+}
+
+.star-label {
+  width: 100%;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--accent-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+
+.win-reward-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #FFF5E6;
+  border: 1.5px solid #FFE6C7;
+  padding: 8px 16px;
+  border-radius: 14px;
+  margin: 4px 0;
+  width: 80%;
+  box-shadow: inset 0 1px 3px rgba(255,255,255,0.6);
+}
+
+.reward-icon {
+  font-size: 1.1rem;
+}
+
+.reward-text {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.reward-amount {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--accent-primary);
+}
+
+.win-next-btn {
+  margin-top: 8px;
+  width: 90%;
+  animation: pulseButton 2s infinite ease-in-out;
 }
 
 .celebration-container {
@@ -1068,28 +1153,75 @@ header {
 
 .confetti {
   position: absolute;
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   background: var(--accent-primary);
-  animation: confettiFall 3s linear forwards;
+  animation: confettiFall 2.8s linear forwards;
 }
 
-.reward-display {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: var(--accent-primary);
-  margin: 15px 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  animation: bounceIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+/* Staggered entrance animations */
+.modal:not(.hidden) .win-mascot-container {
+  animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-.stars {
-  font-size: 2rem;
-  letter-spacing: 5px;
-  margin-bottom: 10px;
+.modal:not(.hidden) .win-title {
+  animation: slideUpFade 0.4s ease-out 0.15s forwards;
+}
+
+.modal:not(.hidden) .win-message {
+  animation: slideUpFade 0.4s ease-out 0.25s forwards;
+}
+
+.modal:not(.hidden) .completed-fruits-row {
+  animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s forwards;
+}
+
+.modal:not(.hidden) .completed-fruits-row span {
+  animation: fruitPopBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.modal:not(.hidden) .stars-container {
+  animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s forwards;
+}
+
+.modal:not(.hidden) .star-item:nth-child(1) {
+  animation: starPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.7s forwards;
+}
+.modal:not(.hidden) .star-item:nth-child(2) {
+  animation: starPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.85s forwards;
+}
+.modal:not(.hidden) .star-item:nth-child(3) {
+  animation: starPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 1.0s forwards;
+}
+
+.modal:not(.hidden) .win-reward-card {
+  animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 1.15s forwards;
+}
+
+.modal:not(.hidden) .win-next-btn {
+  animation: slideUpFade 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 1.3s forwards;
+}
+
+@keyframes slideUpFade {
+  0% { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes starPop {
+  0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+  70% { transform: scale(1.35) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+@keyframes fruitPopBounce {
+  0% { transform: scale(0) translateY(0); opacity: 0; }
+  50% { transform: scale(1.4) translateY(-8px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes pulseButton {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
 }
 
 /* Shop Modal */
@@ -1501,13 +1633,28 @@ header {
 
 @keyframes bottleSelect {
   0% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-18px) scale(1.08); }
-  100% { transform: translateY(-14px) scale(1.06); }
+  35% { transform: translateY(-20px) scale(1.1); }
+  65% { transform: translateY(-13px) scale(1.05); }
+  100% { transform: translateY(-16px) scale(1.08); }
 }
 
-@keyframes receiverInvite {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.03); }
+@keyframes targetInvite {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-5px) scale(1.02); }
+}
+
+@keyframes tubeReceive {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.08, 0.88) translateY(4px); }
+  65% { transform: scale(0.96, 1.05) translateY(-1.5px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+@keyframes fruitLand {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.25, 0.72); }
+  60% { transform: scale(0.94, 1.1); }
+  100% { transform: scale(1); }
 }
 
 @keyframes liquidWave {
@@ -1533,8 +1680,8 @@ header {
 
 /* Mascot Specific Keyframes */
 @keyframes bunnyFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  50% { transform: translateY(-3px) scaleY(1.03); }
 }
 @keyframes earWiggleL {
   0%, 100% { transform: rotate(-15deg); }
@@ -1571,6 +1718,268 @@ header {
 @keyframes tutorialHandBounce {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(10px); }
+}
+
+/* ==========================================================================
+   20b. Player Engagement & Level Progression UI
+   ========================================================================== */
+
+.world-display {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-top: 1px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Win modal progress bar */
+.win-progress-section {
+  width: 90%;
+  margin: 4px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.win-progress-text {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.win-progress-bar-bg {
+  width: 100%;
+  height: 10px;
+  background: rgba(123, 107, 158, 0.12);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255,255,255,0.8);
+}
+
+.win-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+  border-radius: 6px;
+  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  width: 0%;
+}
+
+/* Progress / Journey Modal */
+.progress-content {
+  max-width: 440px;
+  width: 90%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 12px;
+}
+
+.progress-tabs {
+  display: flex;
+  gap: 8px;
+  background: #F0E6FF;
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 4px;
+}
+
+.progress-tab-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 250px;
+  padding-right: 4px;
+}
+
+/* Map Journey tab */
+.progress-map {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.map-world-section {
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.map-world-section h3 {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 10px 4px;
+}
+
+.map-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.map-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  border-radius: 14px;
+  background: white;
+  border: 2px solid #E2D9F3;
+  box-shadow: 0 3px 6px rgba(123, 107, 158, 0.08);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.map-node:active {
+  transform: scale(0.92);
+}
+
+.map-node.completed {
+  background: #E8F8F5;
+  border-color: #A2E1D4;
+}
+
+.map-node.current {
+  background: #FFF5E6;
+  border-color: #FFD29D;
+  box-shadow: 0 4px 12px rgba(255, 159, 67, 0.25);
+  transform: scale(1.05);
+}
+
+.map-node.locked {
+  opacity: 0.65;
+  cursor: not-allowed;
+  background: #F2EFF7;
+  border-color: #E2DDF0;
+}
+
+.map-level-num {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.map-level-stars {
+  font-size: 0.7rem;
+  margin-top: 4px;
+}
+
+/* Fruit Collection Tab */
+.progress-fruits-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.collection-item {
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid white;
+  border-radius: 18px;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 3px 8px rgba(123, 107, 158, 0.05);
+  transition: transform 0.2s;
+}
+
+.collection-item.locked {
+  background: rgba(240, 235, 250, 0.4);
+  border-color: rgba(255, 255, 255, 0.4);
+  opacity: 0.8;
+}
+
+.collection-char {
+  font-size: 2rem;
+  margin-bottom: 6px;
+}
+
+.collection-name {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.collection-desc {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* Milestones Tab */
+.progress-milestones {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.milestone-card {
+  background: rgba(255,255,255,0.6);
+  border: 2px solid white;
+  border-radius: 20px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 10px rgba(123, 107, 158, 0.05);
+}
+
+.milestone-info h4 {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.milestone-info p {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: 2px 0 0;
+}
+
+.milestone-progress-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.milestone-bar-bg {
+  flex: 1;
+  height: 8px;
+  background: rgba(123, 107, 158, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.milestone-bar-fill {
+  height: 100%;
+  background: var(--accent-primary);
+  border-radius: 4px;
+}
+
+.milestone-progress-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  min-width: 36px;
+  text-align: right;
+}
+
+.milestone-card .btn-buy {
+  min-height: 36px;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 14px;
+  align-self: flex-end;
+  margin-top: 4px;
 }
 
 /* ==========================================================================
@@ -1611,14 +2020,50 @@ header {
     border-right: 2px solid var(--surface-border);
     padding-right: 15px;
   }
+  .footer-controls {
+    flex-direction: column;
+    gap: 6px;
+  }
   .game-footer {
     position: fixed;
     bottom: 10px;
     right: 10px;
-    width: 200px;
+    width: 160px;
+    padding: 0;
   }
   .play-stage {
     align-items: center;
+  }
+}
+
+/* Short portrait screens — compact everything */
+@media (max-height: 700px) and (orientation: portrait) {
+  .mascot-guide {
+    gap: 6px;
+    margin-bottom: 2px;
+  }
+  .bunny-mascot {
+    width: 36px;
+    height: 36px;
+  }
+  .mascot-speech {
+    font-size: 0.75rem;
+    padding: 5px 10px;
+  }
+  .game-board {
+    padding: 6px 6px;
+  }
+  header {
+    gap: 2px;
+  }
+  .game-footer {
+    padding: 4px 8px;
+  }
+  .game-footer .btn {
+    min-height: 38px;
+    font-size: 0.82rem;
+    padding: 6px 8px;
+    border-radius: 14px;
   }
 }
 
